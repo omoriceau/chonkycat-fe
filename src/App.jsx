@@ -31,7 +31,7 @@ export default function App() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const API_URL = 'https://jvf4xoz10l.execute-api.us-east-1.amazonaws.com/Prod/products';
+        const API_URL = 'https://ivop33ifl3.execute-api.us-east-1.amazonaws.com/Prod/products';
         const response = await fetch(API_URL, {
           method: 'GET' 
         });
