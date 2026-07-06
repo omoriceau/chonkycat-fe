@@ -16,6 +16,7 @@ import Cart from './pages/Cart';
 import Login from './pages/Login';
 import Profile from './pages/Profile';
 import Checkout from './pages/Checkout';
+import Success from './pages/Success';
 
 export default function App() {
   // 1. GLOBAL STATE
@@ -127,6 +128,7 @@ export default function App() {
       case 'login': return <Login setPage={setPage} />;
       case 'profile': return <Profile setPage={setPage} />;
       case 'checkout': return <Checkout cartItems={cart} setPage={setPage} currentOrderId={currentOrderId}/>;
+      case 'success': return <Success setPage={setPage} />;
       default: return <Home setPage={setPage} />;
     }
   };
