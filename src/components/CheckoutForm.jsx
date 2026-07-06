@@ -24,7 +24,7 @@ const handleSubmit = async (e) => {
       elements,
       confirmParams: {
         // Stripe still requires a fallback URL for payment types that DEMAND a redirect (like 3D Secure bank auth)
-        return_url: `${window.location.origin}/payment-success`,
+        return_url: `${window.location.origin}/`,
       },
       redirect: 'if_required',
     });
@@ -39,10 +39,7 @@ const handleSubmit = async (e) => {
     } else if (paymentIntent && paymentIntent.status === "succeeded") {
       // 3. SUCCESS STATE: The card went through instantly!
       // You can trigger your state change here to show a confirmation screen or route them back to the shop
-      setPage('shop'); 
-      
-      // OPTIONAL: If you want to build a dedicated 'success' view later, 
-      // you could pass 'success' into setPage instead!
+      setPage('success');
     } 
 
     setIsLoading(false);
