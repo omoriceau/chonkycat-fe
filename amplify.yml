@@ -12,6 +12,7 @@ frontend:
         - npm ci
     build:
       commands:
+        - echo "VITE_STRIPE_PUBLISHABLE_KEY=$STRIPE_PK" >> .env
         - npm run build
   artifacts:
     baseDirectory: dist
