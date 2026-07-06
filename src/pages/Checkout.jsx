@@ -3,7 +3,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from '../components/CheckoutForm';
 
-const stripePromise = loadStripe('pk_test_YOUR_STRIPE_PUBLIC_KEY');
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 // Added currentOrderId to props
 export default function Checkout({ cartItems, setPage, currentOrderId }) {
