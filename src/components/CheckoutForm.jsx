@@ -8,7 +8,7 @@ export default function CheckoutForm({ setPage }) {
   const [message, setMessage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!stripe || !elements) {
@@ -19,22 +19,30 @@ export default function CheckoutForm({ setPage }) {
     setIsLoading(true);
     setMessage(null);
 
-    const { error } = await stripe.confirmPayment({
+    // 1. Trigger the payment confirmation
+    const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        // Make sure to change this to your actual production URL later!
-        return_url: "http://localhost:5173/payment-success",
+        // Stripe still requires a fallback URL for payment types that DEMAND a redirect (like 3D Secure bank auth)
+        return_url: `${window.location.origin}/payment-success`,
       },
-      // Note: If you want to handle the result entirely on this page without redirecting, 
-      // you can change this to redirect: 'if_required' 
+      redirect: 'if_required',
     });
 
+    // 2. Evaluate the outcome immediately without leaving the page
     if (error) {
       if (error.type === "card_error" || error.type === "validation_error") {
         setMessage(error.message);
       } else {
         setMessage("An unexpected error occurred while processing your payment.");
       }
+    } else if (paymentIntent && paymentIntent.status === "succeeded") {
+      // 3. SUCCESS STATE: The card went through instantly!
+      // You can trigger your state change here to show a confirmation screen or route them back to the shop
+      setPage('shop'); 
+      
+      // OPTIONAL: If you want to build a dedicated 'success' view later, 
+      // you could pass 'success' into setPage instead!
     } 
 
     setIsLoading(false);
