@@ -25,6 +25,7 @@ export default function App() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [currentOrderId, setCurrentOrderId] = useState(null);
 
   // Fetch products from AWS API Gateway
   useEffect(() => {
@@ -122,10 +123,10 @@ export default function App() {
       case 'products': return <Shop products={displayProducts} selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} goToProduct={goToProduct} addToCart={addToCart} />;
       case 'product': return <ProductDetails product={selectedProduct} addToCart={addToCart} setPage={setPage} />;
       case 'about': return <About />;
-      case 'cart': return <Cart cart={cart} setPage={setPage} updateCartQuantity={updateCartQuantity} removeFromCart={removeFromCart} />
+      case 'cart': return <Cart cart={cart} setPage={setPage} updateCartQuantity={updateCartQuantity} removeFromCart={removeFromCart} setCurrentOrderId={setCurrentOrderId}/>
       case 'login': return <Login setPage={setPage} />;
       case 'profile': return <Profile setPage={setPage} />;
-      case 'checkout': return <Checkout cartItems={cart} setPage={setPage} />;
+      case 'checkout': return <Checkout cartItems={cart} setPage={setPage} currentOrderId={currentOrderId}/>;
       default: return <Home setPage={setPage} />;
     }
   };
