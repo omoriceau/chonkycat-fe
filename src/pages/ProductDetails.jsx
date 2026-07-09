@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
-import { StorageImage } from '@aws-amplify/ui-react-storage';
+import { useParams, useNavigate } from 'react-router-dom';
+import { IMAGES_BASE_URL } from '../config';
+import { slugify } from '../utils/slug';
 
-export default function ProductDetails({ product, addToCart, setPage }) {
+export default function ProductDetails({ products, addToCart }) {
+  const { slug } = useParams();
+  const navigate = useNavigate();
+  const product = products.find((p) => slugify(p.name) === slug);
+
   const [activeTab, setActiveTab] = useState('description');
   const [quantity, setQuantity] = useState(1);
 
@@ -12,7 +18,7 @@ export default function ProductDetails({ product, addToCart, setPage }) {
   if (!product) return (
     <div className="container" style={{ textAlign: 'center', padding: '50px' }}>
       <h2>No product selected!</h2>
-      <button onClick={() => setPage('shop')} className="btn-primary">
+      <button onClick={() => navigate('/shop')} className="btn-primary">
         Return to Shop
       </button>
     </div>
@@ -26,9 +32,9 @@ export default function ProductDetails({ product, addToCart, setPage }) {
           {/* GALLERY */}
           <div>
             <div className="pdp-gallery-main" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>
-              {product.imageKey ? (
-                <StorageImage 
-                  path={`img/${product.imageKey}`} 
+              {product.image_url ? (
+                <img
+                  src={`${IMAGES_BASE_URL}/${product.image_url}`}
                   alt={product.name}
                   style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain' }}
                 />
@@ -42,7 +48,7 @@ export default function ProductDetails({ product, addToCart, setPage }) {
           <div>
             <div className="pdp-breadcrumb">Shop / {product.category} / <span>{product.name}</span></div>
             <h1 className="pdp-title">{product.name}</h1>
-            <div className="pdp-price">{product.price}</div>
+            <div className="pdp-price">${product.price.toFixed(2)}</div>
             <p className="pdp-desc">
                 High-quality {product.category} for your feline. {product.name} is a favorite!
             </p>

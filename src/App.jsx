@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Authenticator } from '@aws-amplify/ui-react';
-import '@aws-amplify/ui-react/styles.css'; 
+import '@aws-amplify/ui-react/styles.css';
+import { API_BASE_URL } from './config';
+import { slugify } from './utils/slug';
 
 // Components
 import Announcement from './components/Announcement';
@@ -17,11 +20,41 @@ import Login from './pages/Login';
 import Profile from './pages/Profile';
 import Checkout from './pages/Checkout';
 
+// The rest of the tree navigates by calling setPage('shop') etc. — this
+// maps those existing string identifiers onto real routes, so navigation
+// actually changes the URL (back/forward, reload, and sharable links all
+// work) without having to touch every call site individually.
+const PAGE_PATHS = {
+  home: '/',
+  products: '/shop',
+  shop: '/shop',
+  about: '/about',
+  cart: '/cart',
+  login: '/login',
+  profile: '/profile',
+  checkout: '/checkout',
+};
+
+// Reverse mapping, for Header/NavDrawer's active-link highlighting.
+const PATH_PAGES = {
+  '/': 'home',
+  '/shop': 'products',
+  '/about': 'about',
+  '/cart': 'cart',
+  '/login': 'login',
+  '/profile': 'profile',
+  '/checkout': 'checkout',
+};
+
 export default function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const setPage = (pageName) => navigate(PAGE_PATHS[pageName] || '/');
+  const currentPage = PATH_PAGES[location.pathname] || location.pathname;
+
   // 1. GLOBAL STATE
-  const [page, setPage] = useState('home');
   const [cart, setCart] = useState([]);
-  const [selectedProduct, setSelectedProduct] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -30,8 +63,7 @@ export default function App() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const API_URL = 'https://jvf4xoz10l.execute-api.us-east-1.amazonaws.com/Prod/products';
-        const response = await fetch(API_URL, {
+        const response = await fetch(`${API_BASE_URL}/products`, {
           method: 'GET' 
         });
 
@@ -73,12 +105,7 @@ export default function App() {
   }, []);
   
   const goToProduct = (product) => {
-    const normalizedProduct = {
-      ...product,
-      imageKey: product.image_url ? product.image_url.replace('img/', '') : null
-    };
-    setSelectedProduct(normalizedProduct);
-    setPage('product');
+    navigate(`/product/${slugify(product.name)}`);
   };
 
   const addToCart = (product, quantity) => {
@@ -110,31 +137,31 @@ export default function App() {
     setCart((prevCart) => prevCart.filter((item) => item.id !== productId));
   };
 
-  const renderPage = () => {
-    if (loading && page === 'products') return <div style={{ padding: '60px 20px', textAlign: 'center' }}>Loading products...</div>;
-    
-    const displayProducts = selectedCategory 
-      ? products.filter((p) => p.category === selectedCategory)
-      : products;
-
-    switch (page) {
-      case 'home': return <Home products={products} setPage={setPage} setSelectedCategory={setSelectedCategory} goToProduct={goToProduct} addToCart={addToCart} />;
-      case 'products': return <Shop products={displayProducts} selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} goToProduct={goToProduct} addToCart={addToCart} />;
-      case 'product': return <ProductDetails product={selectedProduct} addToCart={addToCart} setPage={setPage} />;
-      case 'about': return <About />;
-      case 'cart': return <Cart cart={cart} setPage={setPage} updateCartQuantity={updateCartQuantity} removeFromCart={removeFromCart} />
-      case 'login': return <Login setPage={setPage} />;
-      case 'profile': return <Profile setPage={setPage} />;
-      case 'checkout': return <Checkout cartItems={cart} setPage={setPage} />;
-      default: return <Home setPage={setPage} />;
-    }
-  };
+  const displayProducts = selectedCategory
+    ? products.filter((p) => p.category === selectedCategory)
+    : products;
 
   return (
     <Authenticator.Provider>
       <Announcement />
-      <Header currentPage={page} setPage={setPage} cartCount={cart.length} />
-      <main>{renderPage()}</main>
+      <Header currentPage={currentPage} setPage={setPage} cartCount={cart.length} />
+      <main>
+        <Routes>
+          <Route path="/" element={<Home products={products} setPage={setPage} setSelectedCategory={setSelectedCategory} goToProduct={goToProduct} addToCart={addToCart} />} />
+          <Route path="/shop" element={
+            loading
+              ? <div style={{ padding: '60px 20px', textAlign: 'center' }}>Loading products...</div>
+              : <Shop products={displayProducts} selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} goToProduct={goToProduct} addToCart={addToCart} />
+          } />
+          <Route path="/product/:slug" element={<ProductDetails products={products} addToCart={addToCart} />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/cart" element={<Cart cart={cart} setPage={setPage} updateCartQuantity={updateCartQuantity} removeFromCart={removeFromCart} />} />
+          <Route path="/login" element={<Login setPage={setPage} />} />
+          <Route path="/profile" element={<Profile setPage={setPage} />} />
+          <Route path="/checkout" element={<Checkout cartItems={cart} setPage={setPage} />} />
+          <Route path="*" element={<Home products={products} setPage={setPage} setSelectedCategory={setSelectedCategory} goToProduct={goToProduct} addToCart={addToCart} />} />
+        </Routes>
+      </main>
       <Footer />
     </Authenticator.Provider>
   );

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuthenticator } from '@aws-amplify/ui-react';
+import { API_BASE_URL } from '../config';
 
 export default function Cart({ cart, setPage, updateCartQuantity, removeFromCart }) {
   // Local states for processing inventory verification
@@ -8,11 +9,8 @@ export default function Cart({ cart, setPage, updateCartQuantity, removeFromCart
 
   const { user } = useAuthenticator((context) => [context.user]);
   
-  // Calculate a simple total (assuming price is a string like "$24.99")
-  const total = cart.reduce((sum, item) => {
-    const priceNum = parseFloat(item.price.replace('$', ''));
-    return sum + (priceNum * item.cartQuantity);
-  }, 0);
+  // price comes from the product API as a plain number (e.g. 24.99)
+  const total = cart.reduce((sum, item) => sum + (item.price * item.cartQuantity), 0);
 
   // Live validation handler targeting the backend endpoint
   const handleProceedToCheckout = async () => {
@@ -27,7 +25,7 @@ export default function Cart({ cart, setPage, updateCartQuantity, removeFromCart
     }));
 
     try {
-      const response = await fetch('https://jvf4xoz10l.execute-api.us-east-1.amazonaws.com/Prod/check-inventory', {
+      const response = await fetch(`${API_BASE_URL}/check-inventory`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ items: checkoutPayload })
@@ -135,9 +133,9 @@ export default function Cart({ cart, setPage, updateCartQuantity, removeFromCart
                       </div>
                       
                       <div className="item-price">
-                        <div className="price-each">{item.price}</div>
+                        <div className="price-each">${item.price.toFixed(2)}</div>
                         <div className="price-total">
-                          ${(parseFloat(item.price.replace('$', '')) * item.cartQuantity).toFixed(2)}
+                          ${(item.price * item.cartQuantity).toFixed(2)}
                         </div>
                       </div>
                       <button className="remove-btn" onClick={() => removeFromCart(item.id)}>✕</button>
