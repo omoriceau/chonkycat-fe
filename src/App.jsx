@@ -127,7 +127,7 @@ export default function App() {
       case 'cart': return <Cart cart={cart} setPage={setPage} updateCartQuantity={updateCartQuantity} removeFromCart={removeFromCart} setCurrentOrderId={setCurrentOrderId}/>
       case 'login': return <Login setPage={setPage} />;
       case 'profile': return <Profile setPage={setPage} />;
-      case 'checkout': return <Checkout cartItems={cart} setPage={setPage} currentOrderId={currentOrderId}/>;
+      case 'checkout': return <Checkout cartItems={cart} setPage={setPage} setCurrentOrderId={setCurrentOrderId} />;
       case 'success': return <Success setPage={setPage} />;
       default: return <Home setPage={setPage} />;
     }
