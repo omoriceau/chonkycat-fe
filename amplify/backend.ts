@@ -23,10 +23,13 @@ const USERS_TABLE_NAME = 'chonky-users-dev';
 const postConfirmationLambda = backend.postConfirmation.resources.lambda;
 const stack = Stack.of(postConfirmationLambda);
 
+// TransactWriteItems alone isn't enough — IAM evaluates each operation
+// inside a transaction as if it were called directly, so the Put calls in
+// handler.ts also need PutItem granted explicitly.
 postConfirmationLambda.addToRolePolicy(
   new PolicyStatement({
     effect: Effect.ALLOW,
-    actions: ['dynamodb:TransactWriteItems'],
+    actions: ['dynamodb:TransactWriteItems', 'dynamodb:PutItem'],
     resources: [`arn:aws:dynamodb:${stack.region}:${stack.account}:table/${USERS_TABLE_NAME}`],
   })
 );
