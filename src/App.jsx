@@ -255,7 +255,6 @@ export default function App() {
       <Footer />
     </Authenticator.Provider>
   );
-}
 
 // Runs inside <Authenticator.Provider> (its context isn't visible to the
 // component that renders the Provider itself) purely to detect the
