@@ -52,7 +52,16 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const setPage = (pageName) => navigate(PAGE_PATHS[pageName] || '/');
+  // Login needs to know where to send the user back to afterward — capture
+  // wherever they currently are as router state rather than always landing
+  // on a fixed page (see Login.jsx's AuthenticatedRedirect).
+  const setPage = (pageName) => {
+    if (pageName === 'login') {
+      navigate(PAGE_PATHS.login, { state: { from: location.pathname } });
+    } else {
+      navigate(PAGE_PATHS[pageName] || '/');
+    }
+  };
   const currentPage = PATH_PAGES[location.pathname] || location.pathname;
 
   // 1. GLOBAL STATE
@@ -63,6 +72,8 @@ export default function App() {
   // of a cart line, only the product catalog).
   const [rawCart, setRawCart] = useState({ order_id: null, status: 'cart', items: [] });
   const [products, setProducts] = useState([]);
+  // Transient "you're logged in" banner — see CartAuthSync below.
+  const [loginBanner, setLoginBanner] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState(null);
 
@@ -171,7 +182,11 @@ export default function App() {
     });
   }, [rawCart, products]);
 
-  const claimGuestCartIfAny = useCallback(async () => {
+  const handleAuthenticated = useCallback(async (user) => {
+    const loginId = user?.signInDetails?.loginId;
+    setLoginBanner(loginId ? `Welcome back, ${loginId}!` : 'Welcome back!');
+    setTimeout(() => setLoginBanner(null), 4000);
+
     const guestId = peekGuestId();
     if (!guestId) return;
     try {
@@ -188,7 +203,20 @@ export default function App() {
 
   return (
     <Authenticator.Provider>
-      <CartAuthSync onAuthenticated={claimGuestCartIfAny} />
+      <CartAuthSync onAuthenticated={handleAuthenticated} />
+      {loginBanner && (
+        <div
+          role="status"
+          style={{
+            position: 'sticky', top: 0, zIndex: 1000,
+            background: 'var(--primary, #e0a93c)', color: '#12100e',
+            textAlign: 'center', padding: '10px 20px',
+            fontWeight: 600, fontSize: '0.9rem',
+          }}
+        >
+          ✅ {loginBanner}
+        </div>
+      )}
       <Announcement />
       <Header currentPage={currentPage} setPage={setPage} cartCount={cart.length} />
       <main>
@@ -202,7 +230,7 @@ export default function App() {
           <Route path="/product/:slug" element={<ProductDetails products={products} addToCart={addToCart} />} />
           <Route path="/about" element={<About />} />
           <Route path="/cart" element={<Cart cart={cart} cartOrderId={rawCart.order_id} setPage={setPage} updateCartQuantity={updateCartQuantity} removeFromCart={removeFromCart} />} />
-          <Route path="/login" element={<Login setPage={setPage} />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/profile" element={<Profile setPage={setPage} />} />
           <Route path="/checkout" element={<Checkout cartItems={cart} setPage={setPage} />} />
           <Route path="*" element={<Home products={products} setPage={setPage} setSelectedCategory={setSelectedCategory} goToProduct={goToProduct} addToCart={addToCart} />} />
@@ -215,19 +243,19 @@ export default function App() {
 
 // Runs inside <Authenticator.Provider> (its context isn't visible to the
 // component that renders the Provider itself) purely to detect the
-// logged-out -> logged-in transition and fire the guest-cart claim exactly
-// once when it happens — covers both "logged into an existing account" and
+// logged-out -> logged-in transition and fire onAuthenticated exactly once
+// when it happens — covers both "logged into an existing account" and
 // "just finished signing up".
 function CartAuthSync({ onAuthenticated }) {
-  const { authStatus } = useAuthenticator((context) => [context.authStatus]);
+  const { authStatus, user } = useAuthenticator((context) => [context.authStatus, context.user]);
   const previousStatus = useRef(authStatus);
 
   useEffect(() => {
     if (previousStatus.current !== 'authenticated' && authStatus === 'authenticated') {
-      onAuthenticated();
+      onAuthenticated(user);
     }
     previousStatus.current = authStatus;
-  }, [authStatus, onAuthenticated]);
+  }, [authStatus, user, onAuthenticated]);
 
   return null;
 }
