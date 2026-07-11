@@ -21,7 +21,7 @@ export default function Footer() {
             <ul className="footer-links">
               <li><a href="#dry">Dry Food</a></li>
               <li><a href="#wet">Wet Food</a></li>
-              <li><a href="#treats">Treats</a></li>
+              <li><a href="#snacks">Snacks</a></li>
             </ul>
           </div>
         </div>

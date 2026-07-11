@@ -5,7 +5,7 @@ export default function Shop({ products, selectedCategory, setSelectedCategory, 
   const categories = [
     { name: 'Dry Food', icon: '🥣' },
     { name: 'Wet Food', icon: '🫙' },
-    { name: 'Treats', icon: '🐡' },
+    { name: 'Snacks', icon: '🐡' },
     { name: 'Bundle', icon: '📦' }
   ];
 
@@ -56,11 +56,9 @@ export default function Shop({ products, selectedCategory, setSelectedCategory, 
         <div className="products-grid">
           {products.length > 0 ? (
             products.map((item) => (
-          <ProductCard 
-              key={item.id} 
-              {...item} 
-              // FIX: Map image_url to imageKey and strip the 'img/' folder prefix
-              imageKey={item.image_url ? item.image_url.replace('img/', '') : null}
+          <ProductCard
+              key={item.id}
+              {...item}
               onClick={() => goToProduct(item)}
               onAddToCart={() => addToCart(item, 1)}
             />
