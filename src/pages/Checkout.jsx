@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from '../components/CheckoutForm';
+import { API_BASE_URL } from '../config';
 import { useAuthenticator } from '@aws-amplify/ui-react'; 
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
@@ -94,7 +95,7 @@ export default function Checkout({ cartItems, setPage, setCurrentOrderId }) {
 
   const fetchPaymentIntent = async (orderId, formattedItems) => {
     try {
-      const response = await fetch('https://jvf4xoz10l.execute-api.us-east-1.amazonaws.com/Prod/payments/create-intent', {
+      const response = await fetch(`${API_BASE_URL}/payments/create-intent`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

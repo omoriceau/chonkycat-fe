@@ -3,13 +3,17 @@ backend:
   phases:
     build:
       commands:
-        - npm ci --cache .npm --prefer-offline
+        # npm ci fails here due to an unresolved upstream bug in
+        # @aws-amplify/data-construct's bundled deps (npm ci's strict lockfile
+        # validation trips on it: github.com/aws-amplify/amplify-backend/issues/3158).
+        # npm install doesn't hit it.
+        - npm install --cache .npm --prefer-offline
         - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
 frontend:
   phases:
     preBuild:
       commands:
-        - npm ci
+        - npm install
     build:
       commands:
         - echo "VITE_STRIPE_PUBLISHABLE_KEY=$STRIPE_PK" >> .env

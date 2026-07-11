@@ -1,12 +1,12 @@
 import React from 'react';
-import { StorageImage } from '@aws-amplify/ui-react-storage';
+import { IMAGES_BASE_URL } from '../config';
 
-export default function ProductCard({ 
-  badge, 
-  badgeColor, 
+export default function ProductCard({
+  badge,
+  badgeColor,
   icon,
-  imageKey, 
-  category, 
+  image_url,
+  category,
   name, 
   tagline, 
   stars, 
@@ -31,9 +31,9 @@ export default function ProductCard({
       
       {/* 2. Product Image/Icon */}
     <div className="product-img" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
-        {imageKey ? (
-          <StorageImage 
-            path={`img/${imageKey}`} 
+        {image_url ? (
+          <img
+            src={`${IMAGES_BASE_URL}/${image_url}`}
             alt={name}
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           />
@@ -57,7 +57,7 @@ export default function ProductCard({
         )}
         
         <div className="product-footer">
-          <div className="product-price">{price}</div>
+          <div className="product-price">${price.toFixed(2)}</div>
         </div>
         
         {/* 4. Add to Cart Action */}

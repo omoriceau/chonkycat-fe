@@ -1,21 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuthenticator } from '@aws-amplify/ui-react';
+import { cartApi } from '../utils/cartApi';
 
-export default function Cart({ cart, setPage, updateCartQuantity, removeFromCart }) {
-  // Local states for processing inventory verification
+const EMPTY_SHIPPING = { name: '', email: '', address1: '', city: '', province: '', postal_code: '', country: 'Canada' };
+
+export default function Cart({ cart, cartOrderId, setPage, updateCartQuantity, removeFromCart }) {
+  // Local states for processing checkout
   const [isValidating, setIsValidating] = useState(false);
   const [stockErrors, setStockErrors] = useState([]);
+  const [shipping, setShipping] = useState(EMPTY_SHIPPING);
 
   const { user } = useAuthenticator((context) => [context.user]);
-  
-  // Calculate a simple total (assuming price is a string like "$24.99")
-  const total = cart.reduce((sum, item) => {
-    const priceNum = parseFloat(item.price.replace('$', ''));
-    return sum + (priceNum * item.cartQuantity);
-  }, 0);
 
-  // Live validation handler targeting the backend endpoint
+  // Pre-fill the email field once we know who's signed in — guests still
+  // have to type theirs, since there's nothing to prefill it from.
+  useEffect(() => {
+    const loginId = user?.signInDetails?.loginId;
+    if (loginId) {
+      setShipping((prev) => (prev.email ? prev : { ...prev, email: loginId }));
+    }
+  }, [user]);
+
+  // price comes from the product API as a plain number (e.g. 24.99)
+  const total = cart.reduce((sum, item) => sum + (item.price * item.cartQuantity), 0);
+
+  const updateShippingField = (field) => (e) =>
+    setShipping((prev) => ({ ...prev, [field]: e.target.value }));
+
+  // Turns the open cart order into a real, payable order — required before
+  // routing to /checkout, since that's what actually validates stock,
+  // computes totals, and gives the order a "pending" status the payment
+  // step can act on. Works identically for a guest or a logged-in shopper
+  // (see lambdas/orders/identity.py on the backend).
   const handleProceedToCheckout = async () => {
+    const missing = Object.entries(shipping).filter(([, value]) => !value.trim());
+    if (missing.length > 0) {
+      setStockErrors(['Please fill in your shipping details and email before checking out.']);
+      return;
+    }
+
     setIsValidating(true);
     setStockErrors([]);
     
@@ -25,7 +48,21 @@ export default function Cart({ cart, setPage, updateCartQuantity, removeFromCart
       title: item.name, 
       requestedQuantity: item.cartQuantity 
     }));
-
+    /*
+    try {
+      await cartApi.checkout(cartOrderId, {
+        customer_email: shipping.email,
+        shipping: {
+          name: shipping.name,
+          address1: shipping.address1,
+          city: shipping.city,
+          province: shipping.province,
+          postal_code: shipping.postal_code,
+          country: shipping.country,
+        },
+      });
+    */
+   
     try {
       // 1. Inventory Check (Your existing code)
       const response = await fetch('https://jvf4xoz10l.execute-api.us-east-1.amazonaws.com/Prod/check-inventory', {
@@ -67,8 +104,9 @@ export default function Cart({ cart, setPage, updateCartQuantity, removeFromCart
       // 4. Route to payment screen
       setPage('checkout');
     } catch (error) {
-      console.error("Inventory verification failed:", error);
-      setStockErrors(["A network validation error occurred. Please try again."]);
+      console.error('Checkout failed:', error);
+      setStockErrors([error.message || 'Something went wrong while checking out. Please try again.']);
+    } finally {
       setIsValidating(false);
     }
   };
@@ -158,9 +196,9 @@ export default function Cart({ cart, setPage, updateCartQuantity, removeFromCart
                       </div>
                       
                       <div className="item-price">
-                        <div className="price-each">{item.price}</div>
+                        <div className="price-each">${item.price.toFixed(2)}</div>
                         <div className="price-total">
-                          ${(parseFloat(item.price.replace('$', '')) * item.cartQuantity).toFixed(2)}
+                          ${(item.price * item.cartQuantity).toFixed(2)}
                         </div>
                       </div>
                       <button className="remove-btn" onClick={() => removeFromCart(item.id)}>✕</button>
@@ -190,7 +228,23 @@ export default function Cart({ cart, setPage, updateCartQuantity, removeFromCart
                   )}
                 </div>
 
-                {/* INVENTORY ERROR ALERTS INSERTED DIRECTLY ABOVE SUMMARY STATS */}
+                {/* SHIPPING DETAILS — required before checkout works for a
+                    guest, since there's no account to pull an address from */}
+                <div className="shipping-form" style={{ marginBottom: '15px', display: 'grid', gap: '8px' }}>
+                  <input type="text" placeholder="Full name" value={shipping.name} onChange={updateShippingField('name')} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} />
+                  <input type="email" placeholder="Email" value={shipping.email} onChange={updateShippingField('email')} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} />
+                  <input type="text" placeholder="Address" value={shipping.address1} onChange={updateShippingField('address1')} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <input type="text" placeholder="City" value={shipping.city} onChange={updateShippingField('city')} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} />
+                    <input type="text" placeholder="Province" value={shipping.province} onChange={updateShippingField('province')} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <input type="text" placeholder="Postal code" value={shipping.postal_code} onChange={updateShippingField('postal_code')} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} />
+                    <input type="text" placeholder="Country" value={shipping.country} onChange={updateShippingField('country')} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} />
+                  </div>
+                </div>
+
+                {/* CHECKOUT ERROR ALERTS INSERTED DIRECTLY ABOVE SUMMARY STATS */}
                 {stockErrors.length > 0 && (
                   <div className="stock-error-notice" style={{
                     backgroundColor: '#fdf2f2',
@@ -201,7 +255,7 @@ export default function Cart({ cart, setPage, updateCartQuantity, removeFromCart
                     color: '#9b1c1c',
                     fontSize: '0.85rem'
                   }}>
-                    <strong style={{ display: 'block', marginBottom: '5px' }}>⚠️ Stock Shortage:</strong>
+                    <strong style={{ display: 'block', marginBottom: '5px' }}>⚠️ Checkout Error:</strong>
                     <ul style={{ margin: 0, paddingLeft: '15px' }}>
                       {stockErrors.map((err, idx) => <li key={idx}>{err}</li>)}
                     </ul>
@@ -237,7 +291,7 @@ export default function Cart({ cart, setPage, updateCartQuantity, removeFromCart
                     cursor: isValidating ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  {isValidating ? 'Checking Warehouse Stock... 🐾' : 'Proceed to Checkout'}
+                  {isValidating ? 'Placing Your Order... 🐾' : 'Proceed to Checkout'}
                 </button>
                 
                 <button 

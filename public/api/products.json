@@ -1,8 +1,0 @@
-[
-  { "id": 1, "name": "Tuna & Salmon", "category": "Wet Food", "price": "$24.99", "icon": "🐟", "badge": "Best Seller", "badgeColor": "gold", "stars": "★★★★★", "reviews": "324" },
-  { "id": 2, "name": "Chonky Blend", "category": "Dry Food", "price": "$19.99", "icon": "🥩", "badge": "New", "badgeColor": "plum", "stars": "★★★★★", "reviews": "198" },
-  { "id": 3, "name": "Gravy Royale", "category": "Wet Food", "price": "$22.99", "icon": "🫙", "badge": null, "stars": "★★★★☆", "reviews": "141" },
-  { "id": 4, "name": "Ultimate Chonk Box", "category": "Bundle", "price": "$59.99", "icon": "📦", "badge": "Bundle", "badgeColor": "plum", "stars": "★★★★★", "reviews": "89" },
-  { "id": 5, "name": "Chicken Pillows", "category": "Treats", "price": "$12.50", "icon": "🍗", "stars": "★★★★★", "reviews": "85" },
-  { "id": 6, "name": "Fish Mix", "category": "Dry Food", "price": "$19.99", "icon": "🐟", "stars": "★★★★★", "reviews": "156" }
-]

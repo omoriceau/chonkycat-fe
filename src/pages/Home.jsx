@@ -14,7 +14,7 @@ export default function Home({ products, setPage, setSelectedCategory, addToCart
   const categories = [
     { name: 'Dry Food', icon: '🥣', count: products.filter(p => p.category === 'Dry Food').length },
     { name: 'Wet Food', icon: '🫙', count: products.filter(p => p.category === 'Wet Food').length },
-    { name: 'Treats', icon: '🐡', count: products.filter(p => p.category === 'Treats').length },
+    { name: 'Snacks', icon: '🐡', count: products.filter(p => p.category === 'Snacks').length },
     { name: 'Bundle', icon: '📦', count: products.filter(p => p.category === 'Bundle').length }
   ];
 
@@ -106,7 +106,6 @@ export default function Home({ products, setPage, setSelectedCategory, addToCart
                   <ProductCard
                     key={product.id}
                     {...product}
-                    imageKey={product.image_url ? product.image_url.replace('img/', '') : null}
                     onClick={() => goToProduct(product)}
                     onAddToCart={() => addToCart(product, 1)}
                   />
