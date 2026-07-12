@@ -5,6 +5,7 @@ import CheckoutForm from '../components/CheckoutForm';
 import { API_BASE_URL } from '../config';
 import { useAuthenticator } from '@aws-amplify/ui-react';
 import { cartApi } from '../utils/cartApi';
+import { userApi } from '../utils/userApi';
 
 export default function Checkout({ cartItems, cartOrderId, setPage, setCurrentOrderId }) {
   const { user } = useAuthenticator((context) => [context.user]);
@@ -30,8 +31,8 @@ export default function Checkout({ cartItems, cartOrderId, setPage, setCurrentOr
   const [shippingData, setShippingData] = useState({
     name: '',
     address1: '',
-    city: 'Toronto', // Defaulting based on typical localized traffic
-    province: 'ON',
+    city: '',
+    province: '',
     postal_code: '',
     country: 'Canada'
   });
@@ -43,6 +44,34 @@ export default function Checkout({ cartItems, cartOrderId, setPage, setCurrentOr
       setPage('cart');
     }
   }, [cartItems, setPage]);
+
+  // Pre-fill name + address from the shopper's saved profile — only
+  // overwrites fields the shopper hasn't already typed into (same pattern
+  // as Cart.jsx). Guests have no profile to pull from.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    userApi.getProfile()
+      .then((profile) => {
+        if (cancelled) return;
+        const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ');
+        const address = profile.address || {};
+        setShippingData((prev) => ({
+          ...prev,
+          name: prev.name || fullName,
+          address1: prev.address1 || address.address1 || '',
+          city: prev.city || address.city || '',
+          province: prev.province || address.province || '',
+          postal_code: prev.postal_code || address.postal_code || '',
+          country: address.country || prev.country,
+        }));
+      })
+      .catch(() => {
+        // No saved profile (or not loadable) — the shopper just fills in
+        // shipping manually, same as a guest checkout.
+      });
+    return () => { cancelled = true; };
+  }, [user]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
