@@ -47,6 +47,7 @@ const PATH_PAGES = {
   '/profile': 'profile',
   '/checkout': 'checkout',
 };
+import Success from './pages/Success';
 
 export default function App() {
   const navigate = useNavigate();
@@ -76,6 +77,7 @@ export default function App() {
   const [loginBanner, setLoginBanner] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [currentOrderId, setCurrentOrderId] = useState(null);
 
   // Fetch products from AWS API Gateway
   useEffect(() => {
@@ -239,7 +241,6 @@ export default function App() {
       <Footer />
     </Authenticator.Provider>
   );
-}
 
 // Runs inside <Authenticator.Provider> (its context isn't visible to the
 // component that renders the Provider itself) purely to detect the
@@ -258,4 +259,5 @@ function CartAuthSync({ onAuthenticated }) {
   }, [authStatus, user, onAuthenticated]);
 
   return null;
+}
 }
