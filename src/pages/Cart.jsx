@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthenticator } from '@aws-amplify/ui-react';
-import { cartApi } from '../utils/cartApi';
 import { userApi } from '../utils/userApi';
 
 const EMPTY_SHIPPING = { name: '', email: '', address1: '', city: '', province: '', postal_code: '', country: 'Canada' };
 
 const shippingInputStyle = { padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', width: '100%', minWidth: 0 };
 
-export default function Cart({ cart, cartOrderId, setPage, updateCartQuantity, removeFromCart }) {
-  // Local states for processing checkout
-  const [isValidating, setIsValidating] = useState(false);
+export default function Cart({ cart, setPage, updateCartQuantity, removeFromCart }) {
+  // Local state for the shipping-required gate before routing to /checkout
   const [stockErrors, setStockErrors] = useState([]);
   const [shipping, setShipping] = useState(EMPTY_SHIPPING);
 
@@ -58,88 +56,18 @@ export default function Cart({ cart, cartOrderId, setPage, updateCartQuantity, r
   const updateShippingField = (field) => (e) =>
     setShipping((prev) => ({ ...prev, [field]: e.target.value }));
 
-  // Turns the open cart order into a real, payable order — required before
-  // routing to /checkout, since that's what actually validates stock,
-  // computes totals, and gives the order a "pending" status the payment
-  // step can act on. Works identically for a guest or a logged-in shopper
-  // (see lambdas/orders/identity.py on the backend).
-  const handleProceedToCheckout = async () => {
+  // Order creation itself happens on the /checkout page (see Checkout.jsx's
+  // handleCreateOrder) — this just gates on shipping being filled in before
+  // routing there.
+  const handleProceedToCheckout = () => {
     const missing = Object.entries(shipping).filter(([, value]) => !value.trim());
     if (missing.length > 0) {
       setStockErrors(['Please fill in your shipping details and email before checking out.']);
       return;
     }
 
-    setIsValidating(true);
     setStockErrors([]);
-    
-    // Structure items to match backend property schema expectation
-    const checkoutPayload = cart.map(item => ({
-      productId: item.id,
-      title: item.name, 
-      requestedQuantity: item.cartQuantity 
-    }));
-    /*
-    try {
-      await cartApi.checkout(cartOrderId, {
-        customer_email: shipping.email,
-        shipping: {
-          name: shipping.name,
-          address1: shipping.address1,
-          city: shipping.city,
-          province: shipping.province,
-          postal_code: shipping.postal_code,
-          country: shipping.country,
-        },
-      });
-    */
-   
-    try {
-      // 1. Inventory Check (Your existing code)
-      const response = await fetch('https://jvf4xoz10l.execute-api.us-east-1.amazonaws.com/Prod/check-inventory', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: checkoutPayload })
-      });
-      const result = await response.json();
-
-      if (!result.success) {
-        setStockErrors(result.errors);
-        setIsValidating(false);
-        return; 
-      }
-
-      // --- ADD THIS NEW SECTION ---
-      // 2. Create the Unpaid Order
-      const orderResponse = await fetch('https://jvf4xoz10l.execute-api.us-east-1.amazonaws.com/Prod/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            items: checkoutPayload,
-            totalAmount: total,
-            userId: user ? user.signInDetails?.loginId : 'guest',
-            status: 'UNPAID'
-        })
-      });
-
-      const orderResult = await orderResponse.json();
-
-      if (!orderResponse.ok) {
-          throw new Error(orderResult.message || "Failed to generate order record.");
-      }
-
-      // 3. Save Order ID to global state
-      setCurrentOrderId(orderResult.orderId); 
-      // ----------------------------
-
-      // 4. Route to payment screen
-      setPage('checkout');
-    } catch (error) {
-      console.error('Checkout failed:', error);
-      setStockErrors([error.message || 'Something went wrong while checking out. Please try again.']);
-    } finally {
-      setIsValidating(false);
-    }
+    setPage('checkout');
   };
 
   return (
@@ -310,26 +238,18 @@ export default function Cart({ cart, cartOrderId, setPage, updateCartQuantity, r
                   <span>${(total * 1.08).toFixed(2)}</span>
                 </div>
 
-                {/* Interactive button state handlers mapped smoothly over existing style profiles */}
-                <button 
-                  className="btn-primary" 
+                <button
+                  className="btn-primary"
                   onClick={handleProceedToCheckout}
-                  disabled={isValidating}
-                  style={{ 
-                    width: '100%', 
-                    marginTop: '20px',
-                    opacity: isValidating ? 0.7 : 1,
-                    cursor: isValidating ? 'not-allowed' : 'pointer'
-                  }}
+                  style={{ width: '100%', marginTop: '20px' }}
                 >
-                  {isValidating ? 'Placing Your Order... 🐾' : 'Proceed to Checkout'}
+                  Proceed to Checkout
                 </button>
-                
-                <button 
-                  className="btn-outline" 
-                  style={{ width: '100%', marginTop: '10px', color: 'var(--text)', borderColor: 'var(--border)' }} 
+
+                <button
+                  className="btn-outline"
+                  style={{ width: '100%', marginTop: '10px', color: 'var(--text)', borderColor: 'var(--border)' }}
                   onClick={() => setPage('products')}
-                  disabled={isValidating}
                 >
                   Continue Shopping
                 </button>

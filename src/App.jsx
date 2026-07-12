@@ -35,6 +35,7 @@ const PAGE_PATHS = {
   login: '/login',
   profile: '/profile',
   checkout: '/checkout',
+  success: '/success',
 };
 
 // Reverse mapping, for Header/NavDrawer's active-link highlighting.
@@ -46,6 +47,7 @@ const PATH_PAGES = {
   '/login': 'login',
   '/profile': 'profile',
   '/checkout': 'checkout',
+  '/success': 'success',
 };
 import Success from './pages/Success';
 
@@ -231,10 +233,11 @@ export default function App() {
           } />
           <Route path="/product/:slug" element={<ProductDetails products={products} addToCart={addToCart} />} />
           <Route path="/about" element={<About />} />
-          <Route path="/cart" element={<Cart cart={cart} cartOrderId={rawCart.order_id} setPage={setPage} updateCartQuantity={updateCartQuantity} removeFromCart={removeFromCart} />} />
+          <Route path="/cart" element={<Cart cart={cart} setPage={setPage} updateCartQuantity={updateCartQuantity} removeFromCart={removeFromCart} />} />
           <Route path="/login" element={<Login />} />
           <Route path="/profile" element={<Profile setPage={setPage} />} />
-          <Route path="/checkout" element={<Checkout cartItems={cart} setPage={setPage} />} />
+          <Route path="/checkout" element={<Checkout cartItems={cart} cartOrderId={rawCart.order_id} setPage={setPage} setCurrentOrderId={setCurrentOrderId} />} />
+          <Route path="/success" element={<Success setPage={setPage} currentOrderId={currentOrderId} />} />
           <Route path="*" element={<Home products={products} setPage={setPage} setSelectedCategory={setSelectedCategory} goToProduct={goToProduct} addToCart={addToCart} />} />
         </Routes>
       </main>

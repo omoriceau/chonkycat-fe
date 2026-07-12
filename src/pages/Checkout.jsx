@@ -1,14 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from '../components/CheckoutForm';
 import { API_BASE_URL } from '../config';
-import { useAuthenticator } from '@aws-amplify/ui-react'; 
+import { useAuthenticator } from '@aws-amplify/ui-react';
+import { cartApi } from '../utils/cartApi';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
-
-export default function Checkout({ cartItems, setPage, setCurrentOrderId }) {
+export default function Checkout({ cartItems, cartOrderId, setPage, setCurrentOrderId }) {
   const { user } = useAuthenticator((context) => [context.user]);
+
+  // Only initialize Stripe.js once this page actually mounts — Checkout is
+  // statically imported by App.jsx, so a module-scoped loadStripe() call
+  // would run on every page load (including Home) rather than just here.
+  const stripePromise = useMemo(
+    () => loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY),
+    []
+  );
 
   // Phase Management State
   const [checkoutPhase, setCheckoutPhase] = useState('shipping'); // 'shipping' | 'payment'
@@ -47,44 +54,26 @@ export default function Checkout({ cartItems, setPage, setCurrentOrderId }) {
     setIsProcessing(true);
     setError(null);
 
-    // 1. Map frontend cart to backend schema expectation
-    // NOTE: Passing item.id (UUID) directly. If backend strictly requires INT, 
-    // this will fail until the API is updated.
-    const itemsForBackend = cartItems.map(item => ({
-      product_id: item.id, 
-      quantity: item.cartQuantity
-    }));
-
-    const orderPayload = {
-      user_id: user ? user.userId : null,
-      customer_email: user ? user.signInDetails?.loginId : "guest@example.com",
-      items: itemsForBackend,
-      customer_notes: customerNotes,
-      shipping: shippingData
-    };
-
     try {
-      // 2. Create the Order
-      const orderResponse = await fetch('https://jvf4xoz10l.execute-api.us-east-1.amazonaws.com/Prod/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderPayload)
+      // /orders is a staff-only endpoint (gated by the admin Cognito
+      // authorizer — see template.yaml) and was never reachable by a
+      // shopper. /cart/{orderId}/checkout is the actual guest/logged-in
+      // checkout route: it resolves identity from the bearer token or
+      // X-Guest-Id header (see identity.py) and turns the existing cart
+      // order into a pending one server-side, deriving items from what's
+      // already stored rather than trusting client-supplied ones.
+      const order = await cartApi.checkout(cartOrderId, {
+        customer_email: user ? user.signInDetails?.loginId : "guest@example.com",
+        shipping: shippingData,
+        customer_notes: customerNotes,
       });
 
-      const orderResult = await orderResponse.json();
-
-      if (!orderResponse.ok) {
-        throw new Error(orderResult.message || "Failed to create order record.");
-      }
-
-      const generatedOrderId = orderResult.orderId || orderResult.id;
-      
       // Save ID locally for the next API call, and globally for the Success page
-      setLocalOrderId(generatedOrderId);
-      setCurrentOrderId(generatedOrderId); 
+      setLocalOrderId(order.order_id);
+      setCurrentOrderId(order.order_id);
 
-      // 3. Chain the Payment Intent Call immediately
-      await fetchPaymentIntent(generatedOrderId, itemsForBackend);
+      // Chain the Payment Intent Call immediately
+      await fetchPaymentIntent(order.order_id);
 
     } catch (err) {
       console.error("Order Creation Error:", err);
@@ -93,15 +82,12 @@ export default function Checkout({ cartItems, setPage, setCurrentOrderId }) {
     }
   };
 
-  const fetchPaymentIntent = async (orderId, formattedItems) => {
+  const fetchPaymentIntent = async (orderId) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/payments/create-intent`, {
+      const response = await fetch(`${API_BASE_URL}/payments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            items: formattedItems,
-            orderId: orderId 
-        })
+        body: JSON.stringify({ order_id: orderId })
       });
 
       const result = await response.json();
