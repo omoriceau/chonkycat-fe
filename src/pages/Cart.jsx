@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthenticator } from '@aws-amplify/ui-react';
 import { cartApi } from '../utils/cartApi';
+import { userApi } from '../utils/userApi';
 
 const EMPTY_SHIPPING = { name: '', email: '', address1: '', city: '', province: '', postal_code: '', country: 'Canada' };
+
+const shippingInputStyle = { padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', width: '100%', minWidth: 0 };
 
 export default function Cart({ cart, cartOrderId, setPage, updateCartQuantity, removeFromCart }) {
   // Local states for processing checkout
@@ -19,6 +22,34 @@ export default function Cart({ cart, cartOrderId, setPage, updateCartQuantity, r
     if (loginId) {
       setShipping((prev) => (prev.email ? prev : { ...prev, email: loginId }));
     }
+  }, [user]);
+
+  // Pre-fill name + address from the shopper's saved profile — only
+  // overwrites fields the shopper hasn't already typed into, same as the
+  // email prefill above. Guests have no profile to pull from.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    userApi.getProfile()
+      .then((profile) => {
+        if (cancelled) return;
+        const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ');
+        const address = profile.address || {};
+        setShipping((prev) => ({
+          ...prev,
+          name: prev.name || fullName,
+          address1: prev.address1 || address.address1 || '',
+          city: prev.city || address.city || '',
+          province: prev.province || address.province || '',
+          postal_code: prev.postal_code || address.postal_code || '',
+          country: address.country || prev.country,
+        }));
+      })
+      .catch(() => {
+        // No saved profile (or not loadable) — the shopper just fills in
+        // shipping manually, same as a guest checkout.
+      });
+    return () => { cancelled = true; };
   }, [user]);
 
   // price comes from the product API as a plain number (e.g. 24.99)
@@ -183,16 +214,16 @@ export default function Cart({ cart, cartOrderId, setPage, updateCartQuantity, r
                 {/* SHIPPING DETAILS — required before checkout works for a
                     guest, since there's no account to pull an address from */}
                 <div className="shipping-form" style={{ marginBottom: '15px', display: 'grid', gap: '8px' }}>
-                  <input type="text" placeholder="Full name" value={shipping.name} onChange={updateShippingField('name')} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} />
-                  <input type="email" placeholder="Email" value={shipping.email} onChange={updateShippingField('email')} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} />
-                  <input type="text" placeholder="Address" value={shipping.address1} onChange={updateShippingField('address1')} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} />
+                  <input type="text" placeholder="Full name" value={shipping.name} onChange={updateShippingField('name')} style={shippingInputStyle} />
+                  <input type="email" placeholder="Email" value={shipping.email} onChange={updateShippingField('email')} style={shippingInputStyle} />
+                  <input type="text" placeholder="Address" value={shipping.address1} onChange={updateShippingField('address1')} style={shippingInputStyle} />
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                    <input type="text" placeholder="City" value={shipping.city} onChange={updateShippingField('city')} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} />
-                    <input type="text" placeholder="Province" value={shipping.province} onChange={updateShippingField('province')} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} />
+                    <input type="text" placeholder="City" value={shipping.city} onChange={updateShippingField('city')} style={shippingInputStyle} />
+                    <input type="text" placeholder="Province" value={shipping.province} onChange={updateShippingField('province')} style={shippingInputStyle} />
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                    <input type="text" placeholder="Postal code" value={shipping.postal_code} onChange={updateShippingField('postal_code')} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} />
-                    <input type="text" placeholder="Country" value={shipping.country} onChange={updateShippingField('country')} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} />
+                    <input type="text" placeholder="Postal code" value={shipping.postal_code} onChange={updateShippingField('postal_code')} style={shippingInputStyle} />
+                    <input type="text" placeholder="Country" value={shipping.country} onChange={updateShippingField('country')} style={shippingInputStyle} />
                   </div>
                 </div>
 

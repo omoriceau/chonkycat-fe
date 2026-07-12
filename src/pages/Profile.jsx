@@ -18,6 +18,24 @@ const labelStyle = { display: 'block', color: '#a1a1a6', fontSize: '0.85rem', ma
 const EMPTY_ADDRESS = { address1: '', city: '', province: '', postal_code: '', country: 'Canada' };
 const addressRowStyle = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' };
 
+// Short codes only — mirrors CANADIAN_PROVINCES in lambdas/users/models.py,
+// which rejects anything else.
+const PROVINCES = [
+  { code: 'AB', name: 'Alberta' },
+  { code: 'BC', name: 'British Columbia' },
+  { code: 'MB', name: 'Manitoba' },
+  { code: 'NB', name: 'New Brunswick' },
+  { code: 'NL', name: 'Newfoundland and Labrador' },
+  { code: 'NS', name: 'Nova Scotia' },
+  { code: 'NT', name: 'Northwest Territories' },
+  { code: 'NU', name: 'Nunavut' },
+  { code: 'ON', name: 'Ontario' },
+  { code: 'PE', name: 'Prince Edward Island' },
+  { code: 'QC', name: 'Quebec' },
+  { code: 'SK', name: 'Saskatchewan' },
+  { code: 'YT', name: 'Yukon' },
+];
+
 export default function Profile({ setPage }) {
   // Grab the current user details and the global signOut method from Amplify
   const { user, signOut } = useAuthenticator((context) => [context.user]);
@@ -236,10 +254,23 @@ export default function Profile({ setPage }) {
                     />
                     <div style={addressRowStyle}>
                       <input type="text" placeholder="City" value={form.address.city} onChange={updateAddressField('city')} style={inputStyle} />
-                      <input type="text" placeholder="Province" value={form.address.province} onChange={updateAddressField('province')} style={inputStyle} />
+                      <select value={form.address.province} onChange={updateAddressField('province')} style={inputStyle}>
+                        <option value="">Province</option>
+                        {PROVINCES.map((p) => (
+                          <option key={p.code} value={p.code}>{p.name}</option>
+                        ))}
+                      </select>
                     </div>
                     <div style={addressRowStyle}>
-                      <input type="text" placeholder="Postal code" value={form.address.postal_code} onChange={updateAddressField('postal_code')} style={inputStyle} />
+                      <input
+                        type="text"
+                        placeholder="A1A 1A1"
+                        value={form.address.postal_code}
+                        onChange={updateAddressField('postal_code')}
+                        pattern="[A-Za-z]\d[A-Za-z]\s?\d[A-Za-z]\d"
+                        title="Canadian postal code, e.g. A1A 1A1"
+                        style={inputStyle}
+                      />
                       <input type="text" placeholder="Country" value={form.address.country} onChange={updateAddressField('country')} style={inputStyle} />
                     </div>
                   </div>

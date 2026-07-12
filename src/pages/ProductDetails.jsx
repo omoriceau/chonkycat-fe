@@ -8,7 +8,6 @@ export default function ProductDetails({ products, addToCart }) {
   const navigate = useNavigate();
   const product = products.find((p) => slugify(p.name) === slug);
 
-  const [activeTab, setActiveTab] = useState('description');
   const [quantity, setQuantity] = useState(1);
 
   const handleQtyChange = (delta) => {
@@ -50,7 +49,7 @@ export default function ProductDetails({ products, addToCart }) {
             <h1 className="pdp-title">{product.name}</h1>
             <div className="pdp-price">${product.price.toFixed(2)}</div>
             <p className="pdp-desc">
-                High-quality {product.category} for your feline. {product.name} is a favorite!
+                {product.description}
             </p>
 
             <div className="pdp-qty-label">Quantity</div>
@@ -67,27 +66,14 @@ export default function ProductDetails({ products, addToCart }) {
                 🛒 Add to Cart
             </button>
 
-            {/* TABS */}
+            {/* INGREDIENTS */}
             <div className="pdp-tabs">
-              <div className="tab-btns">
-                <button 
-                  className={`tab-btn ${activeTab === 'description' ? 'active' : ''}`} 
-                  onClick={() => setActiveTab('description')}
-                >
-                  Description
-                </button>
-                <button 
-                  className={`tab-btn ${activeTab === 'ingredients' ? 'active' : ''}`} 
-                  onClick={() => setActiveTab('ingredients')}
-                >
-                  Ingredients
-                </button>
-              </div>
-              
-              <div className="tab-content">
-                {activeTab === 'description' && <p>{product.name} is perfect for your cat's dietary needs.</p>}
-                {activeTab === 'ingredients' && <p>Premium ingredients sourced sustainably.</p>}
-              </div>
+              <div className="pdp-qty-label">Ingredients</div>
+              <ul className="ingredients-list">
+                {product.ingredients.split(',').map((ingredient) => (
+                  <li key={ingredient} className="ingredient-chip">{ingredient.trim()}</li>
+                ))}
+              </ul>
             </div>
           </div>
         </div>

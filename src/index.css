@@ -261,6 +261,7 @@
       border-radius: 8px; overflow: hidden;
       transition: transform .2s, box-shadow .2s;
       position: relative;
+      display: flex; flex-direction: column;
     }
     .product-card:hover {
       transform: translateY(-4px);
@@ -280,7 +281,7 @@
       font-size: 80px; position: relative;
       border-bottom: 1px solid var(--border);
     }
-    .product-info { padding: 16px; }
+    .product-info { padding: 16px; display: flex; flex-direction: column; flex: 1; }
     .product-category {
       font-family: 'Oswald', sans-serif; font-size: 10px;
       letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
@@ -293,6 +294,7 @@
     .product-footer {
       display: flex; align-items: center; justify-content: space-between;
       padding-top: 12px; border-top: 1px solid var(--cream);
+      margin-top: auto;
     }
     .product-price {
       font-family: 'Oswald', sans-serif; font-size: 20px; font-weight: 700; color: var(--plum);
@@ -414,7 +416,7 @@
 
     /* ─── FOOTER ─── */
     footer {
-      background: #110A04; color: #6A5A4A;
+      background: #110A04; color: #8A7868;
       border-top: 1px solid #2A1E14; padding: 56px 0 24px;
     }
     .footer-grid {
@@ -424,7 +426,7 @@
     .footer-brand .logo-text .brand { color: #FFF8F0; font-size: 22px; }
     .footer-brand .logo-text .tagline { color: var(--gold); }
     .footer-about {
-      font-size: 13px; color: #5A4A3A; line-height: 1.7; margin-top: 14px; margin-bottom: 18px;
+      font-size: 13px; color: #A89686; line-height: 1.7; margin-top: 14px; margin-bottom: 18px;
     }
     .social-links { display: flex; gap: 10px; }
     .social-btn {
@@ -440,13 +442,13 @@
       margin-bottom: 16px;
     }
     .footer-links li { margin-bottom: 8px; }
-    .footer-links a { font-size: 13px; color: #5A4A3A; transition: color .2s; }
+    .footer-links a { font-size: 13px; color: #A89686; transition: color .2s; }
     .footer-links a:hover { color: var(--gold-lt); }
     .footer-bottom {
       border-top: 1px solid #2A1E14; padding-top: 20px;
       display: flex; justify-content: space-between; align-items: center;
     }
-    .footer-copy { font-size: 12px; color: #3A2A1A; }
+    .footer-copy { font-size: 12px; color: #8A7868; }
     .footer-paw { color: var(--gold); font-size: 16px; }
 
     /* ─── PRODUCT PAGE (Single) ─── */
@@ -504,19 +506,13 @@
     }
     .pdp-atc { width: 100%; padding: 16px; font-size: 15px; }
     .pdp-tabs { margin-top: 32px; border-top: 2px solid var(--border); padding-top: 24px; }
-    .tab-btns { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 20px; }
-    .tab-btn {
-      font-family: 'Oswald', sans-serif; font-size: 12px;
-      letter-spacing: .12em; text-transform: uppercase;
-      padding: 10px 20px; background: none; border: none; cursor: pointer;
-      color: var(--muted); border-bottom: 3px solid transparent; margin-bottom: -2px;
-      transition: color .2s, border-color .2s;
+    .ingredients-list {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;
     }
-    .tab-btn.active { color: var(--plum); border-bottom-color: var(--plum); }
-    .tab-content { font-size: 14px; line-height: 1.8; color: var(--text); }
-    .tab-content table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-    .tab-content td { padding: 8px 12px; border-bottom: 1px solid var(--cream); font-size: 14px; }
-    .tab-content td:first-child { color: var(--muted); width: 140px; }
+    .ingredient-chip {
+      background: var(--cream); border: 1px solid var(--border); border-radius: 20px;
+      padding: 6px 14px; font-size: 13px; color: var(--text); line-height: 1.3;
+    }
 
     /* ─── SHOP PAGE LAYOUT ─── */
     .shop-layout { display: grid; grid-template-columns: 260px 1fr; gap: 36px; padding: 60px 0; }
@@ -579,8 +575,11 @@
       background: linear-gradient(135deg, var(--plum) 0%, #2A1040 100%);
       border-radius: 12px; border: 3px solid var(--gold);
       height: 420px; display: flex; align-items: center; justify-content: center;
-      font-size: 120px;
+      font-size: 120px; overflow: hidden;
       box-shadow: 0 20px 60px rgba(74,34,96,.3);
+    }
+    .about-img img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
     }
     .about-eyebrow {
       font-family: 'Oswald', sans-serif; font-size: 11px;
@@ -848,11 +847,11 @@
   background: none;
   border: none;
   color: #F5F5F7; /* Matches your navigation link color */
-  font-family: inherit;
-  font-size: 0.9rem;
+  font-family: 'Oswald', sans-serif;
+  font-size: 13px;
   font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
   cursor: pointer;
   padding: 6px 12px;
   border-radius: 4px;
@@ -874,7 +873,7 @@
 @media (max-width: 480px) {
   .login-btn {
     padding: 6px 6px;
-    font-size: 0.8rem;
+    font-size: 12px;
   }
 }
 

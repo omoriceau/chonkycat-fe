@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chonky Cat — Food For Fat Felines</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
+
+  <style>
+:root {
+  --bg:        #F4F3F1;
+  --dark:      #1A1A1A;
+  --announce:      #4A2260;
+  --plum:      #3A3028;
+  --plum-mid:  #524840;
+  --gold:      #B87333;
+  --gold-lt:   #D4935A;
+  --cream:     #EDE8E0;
+  --tan:       #C8BEB0;
+  --rust:      #6E3018;
+  --text:      #1A1A1A;
+  --muted:     #6A6058;
+  --border:    #C0B4A8;
+}
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Libre Baskerville', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    /* ─── NOISE TEXTURE OVERLAY ─── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 9999; opacity: 0.5;
+    }
+
+    img { max-width: 100%; display: block; }
+    a  { text-decoration: none; color: inherit; }
+    ul { list-style: none; }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+    /* ─── ANNOUNCEMENT BAR ─── */
+    .announce {
+      background: var(--announce);
+      color: #EAD5FF;
+      text-align: center;
+      padding: 9px 16px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 13px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .announce span { color: var(--gold-lt); }
+
+    /* ─── HEADER / NAV ─── */
+    header {
+      background: var(--dark);
+      border-bottom: 3px solid var(--gold);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .nav-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 24px; max-width: 1200px; margin: 0 auto;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .logo-paw {
+      width: 44px; height: 44px; background: var(--plum);
+      border-radius: 50%; border: 2px solid var(--gold);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+    }
+    .logo-text { line-height: 1.1; }
+    .logo-text .brand {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px; font-weight: 900;
+      color: #fff; letter-spacing: .03em;
+    }
+    .logo-text .tagline {
+      font-family: 'Oswald', sans-serif;
+      font-size: 10px; color: var(--gold);
+      letter-spacing: .18em; text-transform: uppercase;
+    }
+
+    nav ul { display: flex; gap: 6px; align-items: center; }
+    nav a {
+      font-family: 'Oswald', sans-serif;
+      font-size: 13px; letter-spacing: .1em; text-transform: uppercase;
+      color: #D4C4B5; padding: 6px 12px; border-radius: 3px;
+      transition: color .2s, background .2s;
+    }
+    nav a:hover { color: var(--gold-lt); background: rgba(255,255,255,.06); }
+    nav a.active { color: var(--gold); }
+
+    .nav-actions { display: flex; align-items: center; gap: 16px; }
+    .nav-search {
+      background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14);
+      border-radius: 20px; padding: 6px 14px; display: flex; align-items: center; gap: 8px;
+    }
+    .nav-search input {
+      background: none; border: none; outline: none;
+      color: #E8DDD0; font-family: 'Libre Baskerville', serif; font-size: 13px; width: 140px;
+    }
+    .nav-search input::placeholder { color: #8A7B6E; }
+    .nav-search svg { color: #8A7B6E; flex-shrink: 0; }
+    .cart-btn {
+      background: var(--gold); color: var(--dark);
+      font-family: 'Oswald', sans-serif; font-size: 13px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      border: none; border-radius: 4px; padding: 8px 18px; cursor: pointer;
+      display: flex; align-items: center; gap: 8px; transition: background .2s;
+    }
+    .cart-btn:hover { background: var(--gold-lt); }
+    .cart-count {
+      background: var(--plum); color: #fff;
+      border-radius: 10px; padding: 1px 6px; font-size: 11px;
+    }
+
+    /* ─── HERO ─── */
+    .hero {
+      background: var(--dark);
+      min-height: 580px;
+      position: relative; overflow: hidden;
+      display: flex; align-items: center;
+    }
+    .hero-bg-ring {
+      position: absolute; right: -60px; top: 50%; transform: translateY(-50%);
+      width: 680px; height: 680px; border-radius: 50%;
+      background: radial-gradient(circle, #4A2260 0%, #2A1040 50%, transparent 72%);
+      opacity: .7;
+    }
+    .hero-deco-line {
+      position: absolute; left: 0; bottom: 0; right: 0; height: 4px;
+      background: linear-gradient(90deg, var(--plum), var(--gold), var(--plum));
+    }
+    .hero-inner {
+      display: grid; grid-template-columns: 1fr 520px;
+      gap: 48px; align-items: center;
+      max-width: 1200px; margin: 0 auto; padding: 64px 24px;
+      position: relative; z-index: 2;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(200,150,42,.15); border: 1px solid var(--gold);
+      border-radius: 20px; padding: 5px 14px; margin-bottom: 20px;
+    }
+    .hero-badge span {
+      font-family: 'Oswald', sans-serif; font-size: 11px;
+      letter-spacing: .16em; text-transform: uppercase; color: var(--gold);
+    }
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(44px, 5.5vw, 72px); font-weight: 900;
+      color: #FFF8F0; line-height: 1.0; margin-bottom: 18px;
+    }
+    .hero h1 em { color: var(--gold); font-style: italic; }
+    .hero-sub {
+      font-size: 17px; color: #C4B4A4; line-height: 1.6; margin-bottom: 32px; max-width: 440px;
+    }
+    .hero-cta { display: flex; gap: 14px; flex-wrap: wrap; }
+    .btn-primary {
+      background: var(--gold); color: var(--dark);
+      font-family: 'Oswald', sans-serif; font-size: 14px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      padding: 14px 32px; border-radius: 4px; border: none; cursor: pointer;
+      transition: background .2s, transform .15s;
+      display: inline-block;
+    }
+    .btn-primary:hover { background: var(--gold-lt); transform: translateY(-1px); }
+    .btn-outline {
+      background: transparent; color: #E0D0C0;
+      font-family: 'Oswald', sans-serif; font-size: 14px; font-weight: 500;
+      letter-spacing: .1em; text-transform: uppercase;
+      padding: 13px 28px; border-radius: 4px;
+      border: 1px solid rgba(255,255,255,.25); cursor: pointer;
+      transition: border-color .2s, color .2s; display: inline-block;
+    }
+    .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+
+    .hero-stats {
+      display: flex; gap: 32px; margin-top: 36px; padding-top: 32px;
+      border-top: 1px solid rgba(255,255,255,.1);
+    }
+    .stat-num {
+      font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 900; color: var(--gold);
+    }
+    .stat-lbl { font-size: 12px; color: #8A7A6A; margin-top: 2px; }
+
+    .hero-image-wrap {
+      position: relative; display: flex; justify-content: center;
+    }
+    .hero-image-frame {
+      width: 420px; height: 420px; border-radius: 50%;
+      background: radial-gradient(circle, #5A3070 0%, #2A1040 70%);
+      border: 3px solid var(--gold);
+      box-shadow: 0 0 60px rgba(200,150,42,.25), 0 0 0 12px rgba(200,150,42,.08);
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; position: relative;
+    }
+    .hero-cat-placeholder {
+      font-size: 180px; line-height: 1; margin-top: 40px;
+      filter: drop-shadow(0 8px 24px rgba(0,0,0,.5));
+    }
+    .hero-image-badge {
+      position: absolute; bottom: 20px; right: -10px;
+      background: var(--gold); color: var(--dark);
+      font-family: 'Oswald', sans-serif; font-size: 11px; font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase;
+      padding: 8px 14px; border-radius: 20px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.3);
+    }
+
+    /* ─── TRUST BAR ─── */
+    .trust-bar {
+      background: var(--plum);
+      border-top: 2px solid var(--gold); border-bottom: 2px solid var(--gold);
+    }
+    .trust-inner {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      max-width: 1200px; margin: 0 auto;
+    }
+    .trust-item {
+      padding: 20px 24px; text-align: center;
+      border-right: 1px solid rgba(255,255,255,.15);
+      display: flex; align-items: center; justify-content: center; gap: 14px;
+    }
+    .trust-item:last-child { border-right: none; }
+    .trust-icon { font-size: 28px; flex-shrink: 0; }
+    .trust-title {
+      font-family: 'Oswald', sans-serif; font-size: 14px; font-weight: 700;
+      letter-spacing: .08em; text-transform: uppercase; color: var(--gold-lt);
+    }
+    .trust-desc { font-size: 12px; color: #C4A8E0; margin-top: 2px; }
+
+    /* ─── SECTION HEADER ─── */
+    .section-header { text-align: center; margin-bottom: 48px; }
+    .section-eyebrow {
+      font-family: 'Oswald', sans-serif; font-size: 11px;
+      letter-spacing: .2em; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 10px; display: block;
+    }
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(28px, 3.5vw, 42px); font-weight: 900;
+      color: var(--dark); line-height: 1.1;
+    }
+    .section-title em { color: var(--plum); font-style: italic; }
+    .section-rule {
+      width: 60px; height: 3px; background: var(--gold);
+      margin: 16px auto 0;
+    }
+
+    /* ─── FEATURED PRODUCTS ─── */
+    .featured { padding: 80px 0; }
+    .products-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;
+    }
+    .product-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px; overflow: hidden;
+      transition: transform .2s, box-shadow .2s;
+      position: relative;
+    }
+    .product-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 40px rgba(74,34,96,.15);
+    }
+    .product-badge {
+      position: absolute; top: 12px; left: 12px;
+      background: var(--plum); color: #EAD5FF;
+      font-family: 'Oswald', sans-serif; font-size: 10px;
+      letter-spacing: .12em; text-transform: uppercase;
+      padding: 4px 10px; border-radius: 3px; z-index: 1;
+    }
+    .product-badge.gold { background: var(--gold); color: var(--dark); }
+    .product-img {
+      background: var(--cream);
+      height: 190px; display: flex; align-items: center; justify-content: center;
+      font-size: 80px; position: relative;
+      border-bottom: 1px solid var(--border);
+    }
+    .product-info { padding: 16px; }
+    .product-category {
+      font-family: 'Oswald', sans-serif; font-size: 10px;
+      letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+    }
+    .product-name {
+      font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 700;
+      color: var(--dark); margin: 4px 0 6px;
+    }
+    .product-tagline { font-size: 12px; color: var(--muted); line-height: 1.4; margin-bottom: 12px; }
+    .product-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-top: 12px; border-top: 1px solid var(--cream);
+    }
+    .product-price {
+      font-family: 'Oswald', sans-serif; font-size: 20px; font-weight: 700; color: var(--plum);
+    }
+    .product-stars { color: var(--gold); font-size: 12px; }
+    .product-reviews { font-size: 11px; color: var(--muted); }
+    .add-btn {
+      background: var(--dark); color: #fff;
+      font-family: 'Oswald', sans-serif; font-size: 12px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      border: none; border-radius: 4px; padding: 8px 16px; cursor: pointer;
+      transition: background .2s; width: 100%; margin-top: 10px;
+    }
+    .add-btn:hover { background: var(--plum); }
+
+    /* ─── CATEGORIES ─── */
+    .categories { padding: 0 0 80px; }
+    .cat-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;
+    }
+    .cat-card {
+      background: var(--dark); border-radius: 8px;
+      border: 1px solid rgba(200,150,42,.25);
+      padding: 32px 20px; text-align: center; cursor: pointer;
+      transition: border-color .2s, transform .2s;
+      position: relative; overflow: hidden;
+    }
+    .cat-card::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(74,34,96,.6) 0%, transparent 60%);
+    }
+    .cat-card:hover { border-color: var(--gold); transform: translateY(-3px); }
+    .cat-icon { font-size: 48px; margin-bottom: 14px; position: relative; z-index: 1; }
+    .cat-name {
+      font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700;
+      color: #FFF8F0; margin-bottom: 6px; position: relative; z-index: 1;
+    }
+    .cat-count {
+      font-family: 'Oswald', sans-serif; font-size: 12px;
+      letter-spacing: .1em; color: var(--gold);
+      text-transform: uppercase; position: relative; z-index: 1;
+    }
+
+    /* ─── HALL OF FAME ─── */
+    .hall-of-fame { background: var(--cream); padding: 80px 0; }
+    .hof-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .hof-card {
+      background: #fff; border-radius: 8px;
+      border: 2px solid var(--border); overflow: hidden;
+      transition: border-color .2s, transform .2s;
+    }
+    .hof-card:hover { border-color: var(--gold); transform: translateY(-2px); }
+    .hof-img {
+      height: 180px; background: var(--cream);
+      display: flex; align-items: center; justify-content: center; font-size: 72px;
+    }
+    .hof-info { padding: 12px 14px; }
+    .hof-catname {
+      font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: var(--dark);
+    }
+    .hof-owner { font-size: 12px; color: var(--muted); }
+    .hof-stars { color: var(--gold); font-size: 12px; margin-top: 4px; }
+
+    /* ─── REVIEWS ─── */
+    .reviews { padding: 80px 0; }
+    .reviews-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .review-card {
+      background: #fff; border: 1px solid var(--border); border-radius: 8px;
+      padding: 24px; position: relative;
+    }
+    .review-card::before {
+      content: '"';
+      font-family: 'Playfair Display', serif; font-size: 80px; line-height: .8;
+      color: var(--cream); position: absolute; top: 12px; left: 16px;
+    }
+    .review-stars { color: var(--gold); font-size: 14px; margin-bottom: 12px; }
+    .review-text {
+      font-size: 14px; line-height: 1.7; color: var(--text);
+      font-style: italic; margin-bottom: 16px; position: relative;
+    }
+    .reviewer { display: flex; align-items: center; gap: 10px; }
+    .reviewer-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--cream); border: 2px solid var(--gold);
+      display: flex; align-items: center; justify-content: center; font-size: 18px;
+    }
+    .reviewer-name { font-weight: 700; font-size: 13px; color: var(--dark); }
+    .reviewer-detail { font-size: 11px; color: var(--muted); }
+
+    /* ─── NEWSLETTER ─── */
+    .newsletter {
+      background: var(--dark); padding: 72px 0;
+      border-top: 3px solid var(--gold); border-bottom: 3px solid var(--gold);
+      text-align: center;
+    }
+    .newsletter h2 {
+      font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 900;
+      color: #FFF8F0; margin-bottom: 10px;
+    }
+    .newsletter h2 em { color: var(--gold); font-style: italic; }
+    .newsletter p { color: #8A7B6E; font-size: 15px; margin-bottom: 28px; }
+    .nl-form {
+      display: flex; gap: 0; max-width: 480px; margin: 0 auto;
+      border: 2px solid var(--gold); border-radius: 6px; overflow: hidden;
+    }
+    .nl-form input {
+      flex: 1; background: rgba(255,255,255,.06); border: none; outline: none;
+      padding: 14px 18px; color: #E8D8C8; font-family: 'Libre Baskerville', serif; font-size: 14px;
+    }
+    .nl-form input::placeholder { color: #5A4A3A; }
+    .nl-form button {
+      background: var(--gold); color: var(--dark); border: none; cursor: pointer;
+      font-family: 'Oswald', sans-serif; font-size: 13px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      padding: 0 24px; transition: background .2s;
+    }
+    .nl-form button:hover { background: var(--gold-lt); }
+    .nl-note { font-size: 12px; color: #4A3A2A; margin-top: 12px; }
+
+    /* ─── FOOTER ─── */
+    footer {
+      background: #110A04; color: #6A5A4A;
+      border-top: 1px solid #2A1E14; padding: 56px 0 24px;
+    }
+    .footer-grid {
+      display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 40px; margin-bottom: 40px;
+    }
+    .footer-brand .logo-text .brand { color: #FFF8F0; font-size: 22px; }
+    .footer-brand .logo-text .tagline { color: var(--gold); }
+    .footer-about {
+      font-size: 13px; color: #5A4A3A; line-height: 1.7; margin-top: 14px; margin-bottom: 18px;
+    }
+    .social-links { display: flex; gap: 10px; }
+    .social-btn {
+      width: 34px; height: 34px; border-radius: 6px;
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+      display: flex; align-items: center; justify-content: center; font-size: 16px;
+      transition: border-color .2s, background .2s; cursor: pointer;
+    }
+    .social-btn:hover { border-color: var(--gold); background: rgba(200,150,42,.1); }
+    .footer-col-title {
+      font-family: 'Oswald', sans-serif; font-size: 11px;
+      letter-spacing: .2em; text-transform: uppercase; color: var(--gold);
+      margin-bottom: 16px;
+    }
+    .footer-links li { margin-bottom: 8px; }
+    .footer-links a { font-size: 13px; color: #5A4A3A; transition: color .2s; }
+    .footer-links a:hover { color: var(--gold-lt); }
+    .footer-bottom {
+      border-top: 1px solid #2A1E14; padding-top: 20px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .footer-copy { font-size: 12px; color: #3A2A1A; }
+    .footer-paw { color: var(--gold); font-size: 16px; }
+
+    /* ─── PRODUCT PAGE (Single) ─── */
+    .pdp-section { padding: 60px 0; }
+    .pdp-section + .pdp-section { display: none; } /* only show on product pages */
+    .pdp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
+    .pdp-gallery-main {
+      background: var(--cream); border-radius: 10px; border: 2px solid var(--border);
+      height: 420px; display: flex; align-items: center; justify-content: center;
+      font-size: 140px; margin-bottom: 12px;
+    }
+    .pdp-thumbs { display: flex; gap: 10px; }
+    .pdp-thumb {
+      width: 76px; height: 76px; background: var(--cream);
+      border-radius: 6px; border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 30px; cursor: pointer; transition: border-color .2s;
+    }
+    .pdp-thumb.active, .pdp-thumb:hover { border-color: var(--gold); }
+    .pdp-breadcrumb {
+      font-family: 'Oswald', sans-serif; font-size: 11px;
+      letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .pdp-breadcrumb span { color: var(--gold); }
+    .pdp-title {
+      font-family: 'Playfair Display', serif; font-size: 34px; font-weight: 900;
+      color: var(--dark); margin-bottom: 8px;
+    }
+    .pdp-stars { color: var(--gold); font-size: 14px; }
+    .pdp-reviews-link { font-size: 13px; color: var(--plum); margin-left: 8px; }
+    .pdp-price {
+      font-family: 'Oswald', sans-serif; font-size: 32px; font-weight: 700;
+      color: var(--plum); margin: 16px 0;
+    }
+    .pdp-desc { font-size: 15px; line-height: 1.7; color: var(--muted); margin-bottom: 24px; }
+    .pdp-qty-label {
+      font-family: 'Oswald', sans-serif; font-size: 11px;
+      letter-spacing: .14em; text-transform: uppercase; color: var(--dark); margin-bottom: 8px;
+    }
+    .pdp-qty {
+      display: inline-flex; align-items: center; gap: 0;
+      border: 2px solid var(--border); border-radius: 6px; overflow: hidden; margin-bottom: 18px;
+    }
+    .qty-btn {
+      width: 40px; height: 40px; background: var(--cream); border: none; cursor: pointer;
+      font-size: 18px; font-weight: 700; color: var(--dark);
+      transition: background .2s;
+    }
+    .qty-btn:hover { background: var(--tan); }
+    .qty-num {
+      width: 50px; height: 40px; text-align: center; border: none; outline: none;
+      font-family: 'Oswald', sans-serif; font-size: 16px; font-weight: 700; color: var(--dark);
+      background: #fff;
+    }
+    .pdp-atc { width: 100%; padding: 16px; font-size: 15px; }
+    .pdp-tabs { margin-top: 32px; border-top: 2px solid var(--border); padding-top: 24px; }
+    .tab-btns { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 20px; }
+    .tab-btn {
+      font-family: 'Oswald', sans-serif; font-size: 12px;
+      letter-spacing: .12em; text-transform: uppercase;
+      padding: 10px 20px; background: none; border: none; cursor: pointer;
+      color: var(--muted); border-bottom: 3px solid transparent; margin-bottom: -2px;
+      transition: color .2s, border-color .2s;
+    }
+    .tab-btn.active { color: var(--plum); border-bottom-color: var(--plum); }
+    .tab-content { font-size: 14px; line-height: 1.8; color: var(--text); }
+    .tab-content table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    .tab-content td { padding: 8px 12px; border-bottom: 1px solid var(--cream); font-size: 14px; }
+    .tab-content td:first-child { color: var(--muted); width: 140px; }
+
+    /* ─── SHOP PAGE LAYOUT ─── */
+    .shop-layout { display: grid; grid-template-columns: 260px 1fr; gap: 36px; padding: 60px 0; }
+    .sidebar { position: sticky; top: 88px; align-self: start; }
+    .sidebar-section { margin-bottom: 28px; }
+    .sidebar-title {
+      font-family: 'Oswald', sans-serif; font-size: 11px;
+      letter-spacing: .18em; text-transform: uppercase; color: var(--dark);
+      padding-bottom: 10px; border-bottom: 2px solid var(--gold); margin-bottom: 14px;
+    }
+    .filter-item {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 8px; cursor: pointer;
+    }
+    .filter-check {
+      width: 16px; height: 16px; border: 2px solid var(--border); border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .filter-check.checked { background: var(--plum); border-color: var(--plum); }
+    .filter-label { font-size: 13px; color: var(--text); }
+    .filter-count { margin-left: auto; font-size: 11px; color: var(--muted); }
+    .price-range input[type=range] { width: 100%; accent-color: var(--plum); }
+    .price-vals { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+    .shop-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;
+    }
+    .shop-count { font-size: 14px; color: var(--muted); }
+    .shop-sort {
+      border: 1px solid var(--border); border-radius: 4px; padding: 7px 12px;
+      font-family: 'Oswald', sans-serif; font-size: 12px; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--dark); background: #fff; cursor: pointer;
+    }
+    .shop-products { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+
+    /* ─── PAGE VIEWS ─── */
+    .page { display: none; }
+    .page.visible { display: block; }
+
+    /* ─── ABOUT SECTION ─── */
+    .about-section { padding: 80px 0; }
+    .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+    .about-img {
+      background: linear-gradient(135deg, var(--plum) 0%, #2A1040 100%);
+      border-radius: 12px; border: 3px solid var(--gold);
+      height: 420px; display: flex; align-items: center; justify-content: center;
+      font-size: 120px;
+      box-shadow: 0 20px 60px rgba(74,34,96,.3);
+    }
+    .about-eyebrow {
+      font-family: 'Oswald', sans-serif; font-size: 11px;
+      letter-spacing: .2em; text-transform: uppercase; color: var(--gold); margin-bottom: 12px;
+    }
+    .about-title {
+      font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 900;
+      color: var(--dark); line-height: 1.15; margin-bottom: 20px;
+    }
+    .about-title em { color: var(--plum); font-style: italic; }
+    .about-text { font-size: 15px; line-height: 1.8; color: var(--muted); margin-bottom: 14px; }
+    .about-sig {
+      font-family: 'Playfair Display', serif; font-size: 24px; font-style: italic;
+      color: var(--plum); margin-top: 24px;
+    }
+
+    /* ─── HAMBURGER BUTTON ─── */
+    .hamburger {
+      display: none;
+      flex-direction: column; justify-content: center; align-items: center;
+      gap: 5px; width: 40px; height: 40px;
+      background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18);
+      border-radius: 6px; cursor: pointer; flex-shrink: 0;
+    }
+    .hamburger span {
+      display: block; width: 20px; height: 2px;
+      background: #D4C4B5; border-radius: 2px;
+      transition: transform .3s, opacity .3s;
+    }
+    .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    /* ─── MOBILE NAV DRAWER ─── */
+    .mobile-nav {
+      display: none;
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--dark); z-index: 99;
+      flex-direction: column; padding: 80px 32px 40px;
+      overflow-y: auto;
+    }
+    .mobile-nav.open { display: flex; }
+    .mobile-nav ul { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+    .mobile-nav a {
+      font-family: 'Oswald', sans-serif; font-size: 22px; font-weight: 700;
+      letter-spacing: .08em; text-transform: uppercase;
+      color: #D4C4B5; display: block; padding: 14px 0;
+      border-bottom: 1px solid rgba(255,255,255,.07);
+      transition: color .2s;
+    }
+    .mobile-nav a:hover { color: var(--gold); }
+    .mobile-nav-search {
+      margin-top: 32px;
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14);
+      border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+    }
+    .mobile-nav-search input {
+      background: none; border: none; outline: none;
+      color: #E8DDD0; font-family: 'Libre Baskerville', serif; font-size: 15px; width: 100%;
+    }
+    .mobile-nav-search input::placeholder { color: #5A4A3A; }
+    .mobile-nav-close {
+      position: absolute; top: 20px; right: 20px;
+      font-family: 'Oswald', sans-serif; font-size: 12px; letter-spacing: .12em;
+      text-transform: uppercase; color: var(--muted);
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+      border-radius: 4px; padding: 6px 14px; cursor: pointer;
+    }
+
+    /* ─── TABLET (900px) ─── */
+    @media (max-width: 900px) {
+      .products-grid, .cat-grid, .hof-grid, .reviews-grid { grid-template-columns: repeat(2, 1fr); }
+      .footer-grid { grid-template-columns: 1fr 1fr; gap: 28px; }
+      .hero-inner, .pdp-grid, .about-grid { grid-template-columns: 1fr; }
+      .hero-image-wrap { display: none; }
+      .shop-layout { grid-template-columns: 1fr; }
+      .shop-products { grid-template-columns: repeat(2, 1fr); }
+      nav ul { gap: 0; }
+      .trust-inner { grid-template-columns: 1fr; }
+    }
+
+    /* ─── MOBILE (640px) — hamburger kicks in ─── */
+    @media (max-width: 640px) {
+      /* Nav: logo · search · cart · hamburger */
+      nav { display: none; }
+      .hamburger { display: flex; }
+
+      /* Shrink search to icon-only */
+      .nav-search { padding: 8px 10px; }
+      .nav-search input { display: none; }
+
+      /* Cart: icon only, no label text */
+      .cart-btn .cart-label { display: none; }
+      .cart-btn { padding: 8px 12px; gap: 4px; }
+
+      /* Logo: keep paw + brand name, hide tagline */
+      .logo-text .tagline { display: none; }
+
+      .nav-actions { gap: 8px; }
+      .nav-inner { padding: 12px 16px; gap: 8px; }
+
+      /* Products: 1 per row */
+      .products-grid,
+      .shop-products { grid-template-columns: 1fr; }
+
+      /* Keep other grids at 2 col on tablet, single col on phone */
+      .cat-grid,
+      .hof-grid { grid-template-columns: repeat(2, 1fr); }
+
+      .reviews-grid { grid-template-columns: 1fr; }
+
+      /* Hero */
+      .hero { min-height: auto; }
+      .hero-inner > div { padding: 25px 16px; }
+      .hero-stats { gap: 16px; flex-wrap: wrap; }
+
+      /* Trust bar */
+      .trust-inner { grid-template-columns: 1fr; }
+      .trust-item { border-right: none; border-bottom: 1px solid rgba(255,255,255,.1); }
+      .trust-item:last-child { border-bottom: none; }
+
+      /* Section padding */
+      .featured, .categories, .hall-of-fame, .reviews, .newsletter { padding: 48px 0; }
+
+      /* Footer: 2-column on mobile */
+      .footer-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 28px;
+      }
+      .footer-brand {
+        grid-column: 1 / -1;
+      }
+      .footer-bottom {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+      }
+      .footer-copy { font-size: 11px; }
+
+      /* Newsletter form */
+      .nl-form { flex-direction: column; border-radius: 8px; }
+      .nl-form input { border-radius: 6px 6px 0 0; padding: 14px 16px; }
+      .nl-form button { padding: 14px; border-radius: 0 0 6px 6px; }
+
+      /* Product page */
+      .pdp-section { padding: 32px 0; }
+      .pdp-gallery-main { height: 280px; font-size: 100px; }
+      .pdp-grid { gap: 32px; }
+
+      /* About */
+      .about-section { padding: 48px 0; }
+      .about-grid { gap: 32px; }
+      .about-img { height: 220px; font-size: 80px; }
+
+      /* Shop sidebar */
+      .sidebar { position: static; }
+      .shop-layout { padding: 32px 0; }
+
+      /* Container padding */
+      .container { padding: 0 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── ANNOUNCEMENT ─── -->
+<div class="announce">
+  🐾 Free shipping on orders over $50 · Use code <span>EXTRACHONK</span> for 15% off your first order 🐾
+</div>
+
+<!-- ─── HEADER ─── -->
+<header>
+  <div class="nav-inner">
+    <a href="#" class="logo" onclick="showPage('home')">
+      <div class="logo-paw">🐾</div>
+      <div class="logo-text">
+        <div class="brand">Chonky Cat</div>
+        <div class="tagline">Food For Fat Felines</div>
+      </div>
+    </a>
+
+    <nav>
+      <ul>
+        <li><a href="#" class="active" onclick="showPage('home')">Home</a></li>
+        <li><a href="#" onclick="showPage('shop')">Shop</a></li>
+        <li><a href="#" onclick="showPage('about')">About</a></li>
+        <li><a href="#">Reviews</a></li>
+        <li><a href="#">FAQ</a></li>
+        <li><a href="#">Contact</a></li>
+      </ul>
+    </nav>
+
+    <div class="nav-actions">
+      <div class="nav-search">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" placeholder="Search chonky foods…">
+      </div>
+      <button class="cart-btn">
+        🛒 <span class="cart-label">Cart</span> <span class="cart-count">3</span>
+      </button>
+      <button class="hamburger" id="hamburgerBtn" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ─── MOBILE NAV DRAWER ─── -->
+<nav class="mobile-nav" id="mobileNav">
+  <button class="mobile-nav-close" id="mobileNavClose">✕ Close</button>
+  <ul>
+    <li><a href="#" onclick="showPage('home');closeMobileNav()">Home</a></li>
+    <li><a href="#" onclick="showPage('shop');closeMobileNav()">Shop</a></li>
+    <li><a href="#" onclick="showPage('about');closeMobileNav()">About</a></li>
+    <li><a href="#" onclick="closeMobileNav()">Reviews</a></li>
+    <li><a href="#" onclick="closeMobileNav()">FAQ</a></li>
+    <li><a href="#" onclick="closeMobileNav()">Contact</a></li>
+  </ul>
+  <div class="mobile-nav-search">
+    <svg width="16" height="16" fill="none" stroke="#8A7B6E" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" placeholder="Search chonky foods…">
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════
+     HOME PAGE
+════════════════════════════════════════ -->
+<div id="home" class="page visible">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg-ring"></div>
+    <div class="hero-deco-line"></div>
+    <div class="hero-inner container">
+      <div>
+        <div class="hero-badge">
+          <span>⭐ #1 Premium Cat Food Brand 2025</span>
+        </div>
+        <h1>Food For<br><em>Distinguished</em><br>Chonks</h1>
+        <p class="hero-sub">Premium recipes crafted for cats who appreciate the finer things in life. Because every lap cat deserves a throne — and a full bowl.</p>
+        <div class="hero-cta">
+          <a href="#" class="btn-primary" onclick="showPage('shop')">Shop Dry Food</a>
+          <a href="#" class="btn-outline" onclick="showPage('shop')">Shop Wet Food</a>
+        </div>
+        <div class="hero-stats">
+          <div>
+            <div class="stat-num">12k+</div>
+            <div class="stat-lbl">Happy Chonks</div>
+          </div>
+          <div>
+            <div class="stat-num">4.9★</div>
+            <div class="stat-lbl">Average Rating</div>
+          </div>
+          <div>
+            <div class="stat-num">6</div>
+            <div class="stat-lbl">Premium Blends</div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-image-wrap">
+        <div class="hero-image-frame">
+          <div class="hero-cat-placeholder">🐈</div>
+        </div>
+        <div class="hero-image-badge">Extra Flavor. Extra Chonk.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRUST BAR -->
+  <div class="trust-bar">
+    <div class="trust-inner">
+      <div class="trust-item">
+        <div class="trust-icon">🥣</div>
+        <div>
+          <div class="trust-title">Rich Flavors</div>
+          <div class="trust-desc">Every bite is a taste of luxury</div>
+        </div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">🐟</div>
+        <div>
+          <div class="trust-title">Premium Fish</div>
+          <div class="trust-desc">Real ingredients, no fillers</div>
+        </div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">👑</div>
+        <div>
+          <div class="trust-title">Luxury Cat Dining</div>
+          <div class="trust-desc">Approved by 9/10 lazy cats</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEATURED PRODUCTS -->
+  <section class="featured">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-eyebrow">Chef's Selection</span>
+        <h2 class="section-title">Featured <em>Products</em></h2>
+        <div class="section-rule"></div>
+      </div>
+      <div class="products-grid">
+
+        <div class="product-card">
+          <div class="product-badge gold">Best Seller</div>
+          <div class="product-img">🐟</div>
+          <div class="product-info">
+            <div class="product-category">Wet Food</div>
+            <div class="product-name">Tuna & Salmon</div>
+            <div class="product-tagline">Rich tuna & salmon for discerning feline palates.</div>
+            <div class="product-stars">★★★★★ <span class="product-reviews">(324)</span></div>
+            <div class="product-footer">
+              <div class="product-price">$24.99</div>
+            </div>
+            <button class="add-btn" onclick="showPage('product')">Add to Cart</button>
+          </div>
+        </div>
+
+        <div class="product-card">
+          <div class="product-badge">New</div>
+          <div class="product-img">🥩</div>
+          <div class="product-info">
+            <div class="product-category">Dry Food</div>
+            <div class="product-name">Chonky Blend</div>
+            <div class="product-tagline">Premium dry kibble for the sophisticated chonk.</div>
+            <div class="product-stars">★★★★★ <span class="product-reviews">(198)</span></div>
+            <div class="product-footer">
+              <div class="product-price">$19.99</div>
+            </div>
+            <button class="add-btn">Add to Cart</button>
+          </div>
+        </div>
+
+        <div class="product-card">
+          <div class="product-img">🫙</div>
+          <div class="product-info">
+            <div class="product-category">Wet Food</div>
+            <div class="product-name">Gravy Royale</div>
+            <div class="product-tagline">Velvety gravy sauce — fit for feline royalty.</div>
+            <div class="product-stars">★★★★☆ <span class="product-reviews">(141)</span></div>
+            <div class="product-footer">
+              <div class="product-price">$22.99</div>
+            </div>
+            <button class="add-btn">Add to Cart</button>
+          </div>
+        </div>
+
+        <div class="product-card">
+          <div class="product-badge">Bundle</div>
+          <div class="product-img">📦</div>
+          <div class="product-info">
+            <div class="product-category">Bundle</div>
+            <div class="product-name">Ultimate Chonk Box</div>
+            <div class="product-tagline">Everything a distinguished chonk could ever want.</div>
+            <div class="product-stars">★★★★★ <span class="product-reviews">(89)</span></div>
+            <div class="product-footer">
+              <div class="product-price">$59.99</div>
+            </div>
+            <button class="add-btn">Add to Cart</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- SHOP BY CATEGORY -->
+  <section class="categories">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-eyebrow">The Menu</span>
+        <h2 class="section-title">Shop By <em>Category</em></h2>
+        <div class="section-rule"></div>
+      </div>
+      <div class="cat-grid">
+        <div class="cat-card" onclick="showPage('shop')">
+          <div class="cat-icon">🥣</div>
+          <div class="cat-name">Dry Food</div>
+          <div class="cat-count">3 Products</div>
+        </div>
+        <div class="cat-card" onclick="showPage('shop')">
+          <div class="cat-icon">🫙</div>
+          <div class="cat-name">Wet Food</div>
+          <div class="cat-count">3 Products</div>
+        </div>
+        <div class="cat-card" onclick="showPage('shop')">
+          <div class="cat-icon">🐡</div>
+          <div class="cat-name">Treats</div>
+          <div class="cat-count">3 Products</div>
+        </div>
+        <div class="cat-card" onclick="showPage('shop')">
+          <div class="cat-icon">📦</div>
+          <div class="cat-name">Bundles</div>
+          <div class="cat-count">3 Products</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HALL OF FAME -->
+  <section class="hall-of-fame">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-eyebrow">Our Community</span>
+        <h2 class="section-title">Chonky Hall <em>of Fame</em></h2>
+        <div class="section-rule"></div>
+      </div>
+      <div class="hof-grid">
+        <div class="hof-card">
+          <div class="hof-img">😺</div>
+          <div class="hof-info">
+            <div class="hof-catname">Sir Fluffington</div>
+            <div class="hof-owner">Owner: Margaret T.</div>
+            <div class="hof-stars">★★★★★</div>
+          </div>
+        </div>
+        <div class="hof-card">
+          <div class="hof-img">🐱</div>
+          <div class="hof-info">
+            <div class="hof-catname">Lord Butterscotch</div>
+            <div class="hof-owner">Owner: James W.</div>
+            <div class="hof-stars">★★★★★</div>
+          </div>
+        </div>
+        <div class="hof-card">
+          <div class="hof-img">😸</div>
+          <div class="hof-info">
+            <div class="hof-catname">Duchess Pudding</div>
+            <div class="hof-owner">Owner: Sarah K.</div>
+            <div class="hof-stars">★★★★★</div>
+          </div>
+        </div>
+        <div class="hof-card">
+          <div class="hof-img">🙀</div>
+          <div class="hof-info">
+            <div class="hof-catname">Baron Von Chonk</div>
+            <div class="hof-owner">Owner: Dave P.</div>
+            <div class="hof-stars">★★★★★</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REVIEWS -->
+  <section class="reviews">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-eyebrow">What Cat Parents Say</span>
+        <h2 class="section-title">Paw-Approved <em>Reviews</em></h2>
+        <div class="section-rule"></div>
+      </div>
+      <div class="reviews-grid">
+        <div class="review-card">
+          <div class="review-stars">★★★★★</div>
+          <p class="review-text">My cat refuses normal food now. He sits by his bowl and stares at me until I open a Chonky Cat tin. I am his servant.</p>
+          <div class="reviewer">
+            <div class="reviewer-avatar">👩</div>
+            <div>
+              <div class="reviewer-name">Margaret T.</div>
+              <div class="reviewer-detail">Verified Buyer · Tuna & Salmon</div>
+            </div>
+          </div>
+        </div>
+        <div class="review-card">
+          <div class="review-stars">★★★★★</div>
+          <p class="review-text">He looks like feline royalty now. The top hat in the logo is accurate — my cat genuinely has that energy at mealtime.</p>
+          <div class="reviewer">
+            <div class="reviewer-avatar">👨</div>
+            <div>
+              <div class="reviewer-name">James W.</div>
+              <div class="reviewer-detail">Verified Buyer · Chonky Blend</div>
+            </div>
+          </div>
+        </div>
+        <div class="review-card">
+          <div class="review-stars">★★★★★</div>
+          <p class="review-text">Because every lap cat deserves a throne — and now my lap cat has one. She's gained 0.5lbs and could not be happier.</p>
+          <div class="reviewer">
+            <div class="reviewer-avatar">👩</div>
+            <div>
+              <div class="reviewer-name">Sarah K.</div>
+              <div class="reviewer-detail">Verified Buyer · Gravy Royale</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NEWSLETTER -->
+  <section class="newsletter">
+    <div class="container">
+      <h2>Get Exclusive <em>Chonk Deals</em></h2>
+      <p>New flavors, insider discounts, and chonky cat content delivered straight to your inbox.</p>
+      <div class="nl-form">
+        <input type="email" placeholder="youremail@example.com">
+        <button>Subscribe</button>
+      </div>
+      <div class="nl-note">No spam. Only premium chonk content. Unsubscribe anytime.</div>
+    </div>
+  </section>
+
+</div><!-- /home -->
+
+
+<!-- ═══════════════════════════════════════
+     SHOP PAGE
+════════════════════════════════════════ -->
+<div id="shop" class="page">
+  <div class="container">
+    <div class="shop-layout">
+
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-title">Category</div>
+          <div class="filter-item"><div class="filter-check checked"></div><div class="filter-label">All Products</div><div class="filter-count">12</div></div>
+          <div class="filter-item"><div class="filter-check"></div><div class="filter-label">Dry Food</div><div class="filter-count">3</div></div>
+          <div class="filter-item"><div class="filter-check"></div><div class="filter-label">Wet Food</div><div class="filter-count">3</div></div>
+          <div class="filter-item"><div class="filter-check"></div><div class="filter-label">Treats</div><div class="filter-count">3</div></div>
+          <div class="filter-item"><div class="filter-check"></div><div class="filter-label">Bundles</div><div class="filter-count">3</div></div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-title">Price Range</div>
+          <div class="price-range">
+            <input type="range" min="0" max="100" value="80">
+            <div class="price-vals"><span>$0</span><span>$80</span></div>
+          </div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-title">Flavour</div>
+          <div class="filter-item"><div class="filter-check checked"></div><div class="filter-label">Tuna</div></div>
+          <div class="filter-item"><div class="filter-check checked"></div><div class="filter-label">Salmon</div></div>
+          <div class="filter-item"><div class="filter-check"></div><div class="filter-label">Ocean Mix</div></div>
+          <div class="filter-item"><div class="filter-check"></div><div class="filter-label">Gravy</div></div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-title">Rating</div>
+          <div class="filter-item"><div class="filter-check checked"></div><div class="filter-label">★★★★★ Only</div></div>
+          <div class="filter-item"><div class="filter-check"></div><div class="filter-label">4★ & Up</div></div>
+        </div>
+      </aside>
+
+      <!-- PRODUCT GRID -->
+      <div>
+        <div class="shop-header">
+          <div class="shop-count">Showing <strong>12 products</strong></div>
+          <select class="shop-sort">
+            <option>Sort: Best Selling</option>
+            <option>Price: Low to High</option>
+            <option>Price: High to Low</option>
+            <option>Newest First</option>
+          </select>
+        </div>
+        <div class="shop-products">
+          <!-- Row 1 -->
+          <div class="product-card" onclick="showPage('product')" style="cursor:pointer">
+            <div class="product-badge gold">Best Seller</div>
+            <div class="product-img">🐟</div>
+            <div class="product-info">
+              <div class="product-category">Wet Food</div>
+              <div class="product-name">Tuna & Salmon</div>
+              <div class="product-stars">★★★★★ <span class="product-reviews">(324)</span></div>
+              <div class="product-footer"><div class="product-price">$24.99</div></div>
+              <button class="add-btn">Add to Cart</button>
+            </div>
+          </div>
+          <div class="product-card">
+            <div class="product-img">🥣</div>
+            <div class="product-info">
+              <div class="product-category">Dry Food</div>
+              <div class="product-name">Chonky Blend</div>
+              <div class="product-stars">★★★★★ <span class="product-reviews">(198)</span></div>
+              <div class="product-footer"><div class="product-price">$19.99</div></div>
+              <button class="add-btn">Add to Cart</button>
+            </div>
+          </div>
+          <div class="product-card">
+            <div class="product-badge">New</div>
+            <div class="product-img">🐡</div>
+            <div class="product-info">
+              <div class="product-category">Dry Food</div>
+              <div class="product-name">Tuna Supreme</div>
+              <div class="product-stars">★★★★★ <span class="product-reviews">(77)</span></div>
+              <div class="product-footer"><div class="product-price">$21.99</div></div>
+              <button class="add-btn">Add to Cart</button>
+            </div>
+          </div>
+          <!-- Row 2 -->
+          <div class="product-card">
+            <div class="product-img">🥩</div>
+            <div class="product-info">
+              <div class="product-category">Dry Food</div>
+              <div class="product-name">Salmon Feast</div>
+              <div class="product-stars">★★★★☆ <span class="product-reviews">(112)</span></div>
+              <div class="product-footer"><div class="product-price">$21.99</div></div>
+              <button class="add-btn">Add to Cart</button>
+            </div>
+          </div>
+          <div class="product-card">
+            <div class="product-img">🫙</div>
+            <div class="product-info">
+              <div class="product-category">Wet Food</div>
+              <div class="product-name">Gravy Royale</div>
+              <div class="product-stars">★★★★★ <span class="product-reviews">(141)</span></div>
+              <div class="product-footer"><div class="product-price">$22.99</div></div>
+              <button class="add-btn">Add to Cart</button>
+            </div>
+          </div>
+          <div class="product-card">
+            <div class="product-img">🌊</div>
+            <div class="product-info">
+              <div class="product-category">Wet Food</div>
+              <div class="product-name">Ocean Deluxe</div>
+              <div class="product-stars">★★★★☆ <span class="product-reviews">(93)</span></div>
+              <div class="product-footer"><div class="product-price">$23.99</div></div>
+              <button class="add-btn">Add to Cart</button>
+            </div>
+          </div>
+          <!-- Row 3 -->
+          <div class="product-card">
+            <div class="product-img">🍪</div>
+            <div class="product-info">
+              <div class="product-category">Treats</div>
+              <div class="product-name">Chonk Bites</div>
+              <div class="product-stars">★★★★★ <span class="product-reviews">(205)</span></div>
+              <div class="product-footer"><div class="product-price">$12.99</div></div>
+              <button class="add-btn">Add to Cart</button>
+            </div>
+          </div>
+          <div class="product-card">
+            <div class="product-img">🥨</div>
+            <div class="product-info">
+              <div class="product-category">Treats</div>
+              <div class="product-name">Crunch Nuggets</div>
+              <div class="product-stars">★★★★★ <span class="product-reviews">(167)</span></div>
+              <div class="product-footer"><div class="product-price">$11.99</div></div>
+              <button class="add-btn">Add to Cart</button>
+            </div>
+          </div>
+          <div class="product-card">
+            <div class="product-badge">Bundle</div>
+            <div class="product-img">📦</div>
+            <div class="product-info">
+              <div class="product-category">Bundle</div>
+              <div class="product-name">Ultimate Chonk Box</div>
+              <div class="product-stars">★★★★★ <span class="product-reviews">(89)</span></div>
+              <div class="product-footer"><div class="product-price">$59.99</div></div>
+              <button class="add-btn">Add to Cart</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- /shop -->
+
+
+<!-- ═══════════════════════════════════════
+     PRODUCT PAGE
+════════════════════════════════════════ -->
+<div id="product" class="page">
+  <div class="container pdp-section">
+    <div class="pdp-grid">
+
+      <!-- GALLERY -->
+      <div>
+        <div class="pdp-gallery-main">🐟</div>
+        <div class="pdp-thumbs">
+          <div class="pdp-thumb active">🐟</div>
+          <div class="pdp-thumb">🥣</div>
+          <div class="pdp-thumb">📦</div>
+          <div class="pdp-thumb">🏷️</div>
+        </div>
+      </div>
+
+      <!-- INFO -->
+      <div>
+        <div class="pdp-breadcrumb">Shop / Wet Food / <span>Tuna & Salmon Chonky Blend</span></div>
+        <h1 class="pdp-title">Tuna & Salmon<br>Chonky Blend</h1>
+        <div>
+          <span class="pdp-stars">★★★★★</span>
+          <a class="pdp-reviews-link" href="#">324 Reviews</a>
+        </div>
+        <div class="pdp-price">$24.99</div>
+        <p class="pdp-desc">Rich tuna and salmon recipe crafted for the most discerning feline palates. Extra flavor. Extra chonk. Approved by 9 out of 10 lazy cats — the 10th was asleep.</p>
+
+        <div class="pdp-qty-label">Quantity</div>
+        <div class="pdp-qty">
+          <button class="qty-btn">−</button>
+          <input class="qty-num" type="number" value="1" min="1">
+          <button class="qty-btn">+</button>
+        </div>
+
+        <button class="btn-primary pdp-atc">🛒 Add to Cart</button>
+
+        <div class="pdp-tabs">
+          <div class="tab-btns">
+            <button class="tab-btn active">Description</button>
+            <button class="tab-btn">Ingredients</button>
+            <button class="tab-btn">Nutrition</button>
+          </div>
+          <div class="tab-content">
+            <div id="tab-desc">
+              <p>Each can is packed with sustainably sourced tuna and Atlantic salmon, slow-cooked in a rich broth to preserve natural flavours. No artificial preservatives, no fillers — just premium ingredients your cat will adore.</p>
+              <br>
+              <p>The Chonky Blend is veterinarian-consulted and crafted for cats who appreciate the finer things. Extra Flavor. Extra Chonk.</p>
+            </div>
+            <div id="tab-ing" style="display:none">
+              <p>Tuna (58%), Salmon (20%), Fish Broth, Fish Oil, Sunflower Oil, Vitamins (A, D3, E, B12), Minerals (Iron, Zinc, Manganese), Taurine.</p>
+            </div>
+            <div id="tab-nut" style="display:none">
+              <table>
+                <tr><td>Protein</td><td>32%</td></tr>
+                <tr><td>Fat</td><td>18%</td></tr>
+                <tr><td>Moisture</td><td>8%</td></tr>
+                <tr><td>Fibre</td><td>2%</td></tr>
+                <tr><td>Ash</td><td>6%</td></tr>
+                <tr><td>Calories</td><td>385 kcal / 100g</td></tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div><!-- /product -->
+
+
+<!-- ═══════════════════════════════════════
+     ABOUT PAGE
+════════════════════════════════════════ -->
+<div id="about" class="page">
+  <section class="about-section">
+    <div class="container">
+      <div class="about-grid">
+        <div class="about-img">🎩</div>
+        <div>
+          <div class="about-eyebrow">Our Story</div>
+          <h2 class="about-title">Founded by<br><em>Sir Chonksworth III</em></h2>
+          <p class="about-text">Chonky Cat believes every feline deserves a meal worthy of their majestic fluff and undeniable confidence. Our recipes focus on premium ingredients, irresistible flavours, and an unapologetic appreciation for cats who enjoy a comfortable lifestyle.</p>
+          <p class="about-text">We don't believe in "diet food." We believe in food that celebrates cats for exactly who they are — dignified, rotund, and utterly magnificent.</p>
+          <p class="about-text">Every recipe is developed with real fish, real nutrients, and zero apologies for the extra chonk. Because your cat didn't get to this size by settling.</p>
+          <div class="about-sig">— Sir Chonksworth III, Founder & Chief Taste Tester</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div><!-- /about -->
+
+
+<!-- ─── FOOTER ─── -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="logo">
+          <div class="logo-paw">🐾</div>
+          <div class="logo-text">
+            <div class="brand">Chonky Cat</div>
+            <div class="tagline">Food For Fat Felines</div>
+          </div>
+        </div>
+        <p class="footer-about">Premium cuisine for distinguished felines. Because every lap cat deserves a throne — and a very full bowl.</p>
+        <div class="social-links">
+          <div class="social-btn">📘</div>
+          <div class="social-btn">📸</div>
+          <div class="social-btn">🎵</div>
+          <div class="social-btn">🐦</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="footer-col-title">Shop</div>
+        <ul class="footer-links">
+          <li><a href="#">Dry Food</a></li>
+          <li><a href="#">Wet Food</a></li>
+          <li><a href="#">Treats</a></li>
+          <li><a href="#">Bundles</a></li>
+          <li><a href="#">New Arrivals</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="footer-col-title">Help</div>
+        <ul class="footer-links">
+          <li><a href="#">FAQ</a></li>
+          <li><a href="#">Shipping Info</a></li>
+          <li><a href="#">Returns</a></li>
+          <li><a href="#">Track Order</a></li>
+          <li><a href="#">Contact Us</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="footer-col-title">Company</div>
+        <ul class="footer-links">
+          <li><a href="#">About Us</a></li>
+          <li><a href="#">Reviews</a></li>
+          <li><a href="#">Hall of Fame</a></li>
+          <li><a href="#">Press</a></li>
+          <li><a href="#">Careers</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2025 Chonky Cat. All rights reserved. No cats were put on diets in the making of this website.</div>
+      <div class="footer-paw">🐾</div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Hamburger menu
+  const hamburgerBtn = document.getElementById('hamburgerBtn');
+  const mobileNav    = document.getElementById('mobileNav');
+  const mobileClose  = document.getElementById('mobileNavClose');
+
+  function openMobileNav() {
+    mobileNav.classList.add('open');
+    hamburgerBtn.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeMobileNav() {
+    mobileNav.classList.remove('open');
+    hamburgerBtn.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  hamburgerBtn?.addEventListener('click', () => {
+    mobileNav.classList.contains('open') ? closeMobileNav() : openMobileNav();
+  });
+  mobileClose?.addEventListener('click', closeMobileNav);
+
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('visible'));
+    document.getElementById(id).classList.add('visible');
+    document.querySelectorAll('.demo-btn').forEach(b => b.classList.remove('active'));
+    const map = { home: 0, shop: 1, product: 2, about: 3 };
+    document.querySelectorAll('.demo-btn')[map[id]]?.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // Tab switching on product page
+  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const tabs = ['tab-desc', 'tab-ing', 'tab-nut'];
+      tabs.forEach(t => document.getElementById(t).style.display = 'none');
+      document.getElementById(tabs[i]).style.display = 'block';
+    });
+  });
+
+  // Quantity buttons
+  document.querySelector('.qty-btn:first-child')?.addEventListener('click', () => {
+    const inp = document.querySelector('.qty-num');
+    if (parseInt(inp.value) > 1) inp.value = parseInt(inp.value) - 1;
+  });
+  document.querySelector('.qty-btn:last-child')?.addEventListener('click', () => {
+    const inp = document.querySelector('.qty-num');
+    inp.value = parseInt(inp.value) + 1;
+  });
+</script>
+
+</body>
+</html>
