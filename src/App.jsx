@@ -203,20 +203,6 @@ export default function App() {
     ? products.filter((p) => p.category === selectedCategory)
     : products;
 
-    switch (page) {
-      case 'home': return <Home products={products} setPage={setPage} setSelectedCategory={setSelectedCategory} goToProduct={goToProduct} addToCart={addToCart} />;
-      case 'products': return <Shop products={displayProducts} selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} goToProduct={goToProduct} addToCart={addToCart} />;
-      case 'product': return <ProductDetails product={selectedProduct} addToCart={addToCart} setPage={setPage} />;
-      case 'about': return <About />;
-      case 'cart': return <Cart cart={cart} setPage={setPage} updateCartQuantity={updateCartQuantity} removeFromCart={removeFromCart} setCurrentOrderId={setCurrentOrderId}/>
-      case 'login': return <Login setPage={setPage} />;
-      case 'profile': return <Profile setPage={setPage} />;
-      case 'checkout': return <Checkout cartItems={cart} setPage={setPage} setCurrentOrderId={setCurrentOrderId} />;
-      case 'success': return <Success setPage={setPage} />;
-      default: return <Home setPage={setPage} />;
-    }
-  };
-
   return (
     <Authenticator.Provider>
       <CartAuthSync onAuthenticated={handleAuthenticated} />
@@ -273,4 +259,5 @@ function CartAuthSync({ onAuthenticated }) {
   }, [authStatus, user, onAuthenticated]);
 
   return null;
+}
 }
