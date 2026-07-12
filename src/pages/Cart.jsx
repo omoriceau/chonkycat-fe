@@ -41,7 +41,14 @@ export default function Cart({ cart, cartOrderId, setPage, updateCartQuantity, r
 
     setIsValidating(true);
     setStockErrors([]);
-
+    
+    // Structure items to match backend property schema expectation
+    const checkoutPayload = cart.map(item => ({
+      productId: item.id,
+      title: item.name, 
+      requestedQuantity: item.cartQuantity 
+    }));
+    /*
     try {
       await cartApi.checkout(cartOrderId, {
         customer_email: shipping.email,
@@ -54,6 +61,47 @@ export default function Cart({ cart, cartOrderId, setPage, updateCartQuantity, r
           country: shipping.country,
         },
       });
+    */
+   
+    try {
+      // 1. Inventory Check (Your existing code)
+      const response = await fetch('https://jvf4xoz10l.execute-api.us-east-1.amazonaws.com/Prod/check-inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: checkoutPayload })
+      });
+      const result = await response.json();
+
+      if (!result.success) {
+        setStockErrors(result.errors);
+        setIsValidating(false);
+        return; 
+      }
+
+      // --- ADD THIS NEW SECTION ---
+      // 2. Create the Unpaid Order
+      const orderResponse = await fetch('https://jvf4xoz10l.execute-api.us-east-1.amazonaws.com/Prod/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            items: checkoutPayload,
+            totalAmount: total,
+            userId: user ? user.signInDetails?.loginId : 'guest',
+            status: 'UNPAID'
+        })
+      });
+
+      const orderResult = await orderResponse.json();
+
+      if (!orderResponse.ok) {
+          throw new Error(orderResult.message || "Failed to generate order record.");
+      }
+
+      // 3. Save Order ID to global state
+      setCurrentOrderId(orderResult.orderId); 
+      // ----------------------------
+
+      // 4. Route to payment screen
       setPage('checkout');
     } catch (error) {
       console.error('Checkout failed:', error);
