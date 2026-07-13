@@ -7,7 +7,7 @@ import { useAuthenticator } from '@aws-amplify/ui-react';
 import { cartApi } from '../utils/cartApi';
 import { userApi } from '../utils/userApi';
 
-export default function Checkout({ cartItems, cartOrderId, setPage, setCurrentOrderId }) {
+export default function Checkout({ cartItems, cartOrderId, setPage, setCurrentOrderId, clearCart }) {
   const { user } = useAuthenticator((context) => [context.user]);
 
   // Only initialize Stripe.js once this page actually mounts — Checkout is
@@ -38,12 +38,19 @@ export default function Checkout({ cartItems, cartOrderId, setPage, setCurrentOr
   });
   const [customerNotes, setCustomerNotes] = useState('');
 
-  // Protect the route: Bounce back if cart is empty
+  // Protect the route: Bounce back if cart is empty — but not once an order
+  // has actually been placed. handleCreateOrder clears the cart locally
+  // right after cartApi.checkout() succeeds, before the payment-intent
+  // fetch resolves and flips checkoutPhase to 'payment' — gating on
+  // checkoutPhase alone leaves a window where cartItems is already empty
+  // but the phase hasn't switched yet, bouncing the shopper mid-checkout.
+  // localOrderId is set in that same synchronous batch as the cart clear,
+  // so it can't observe that window.
   useEffect(() => {
-    if (!cartItems || cartItems.length === 0) {
+    if (!localOrderId && (!cartItems || cartItems.length === 0)) {
       setPage('cart');
     }
-  }, [cartItems, setPage]);
+  }, [cartItems, setPage, localOrderId]);
 
   // Pre-fill name + address from the shopper's saved profile — only
   // overwrites fields the shopper hasn't already typed into (same pattern
@@ -100,6 +107,11 @@ export default function Checkout({ cartItems, cartOrderId, setPage, setCurrentOr
       // Save ID locally for the next API call, and globally for the Success page
       setLocalOrderId(order.order_id);
       setCurrentOrderId(order.order_id);
+
+      // The backend cart is already gone at this point — checkout_cart()
+      // converted it to this pending order server-side, win or lose on the
+      // payment that follows. Clear it locally to match.
+      clearCart?.();
 
       // Chain the Payment Intent Call immediately
       await fetchPaymentIntent(order.order_id);

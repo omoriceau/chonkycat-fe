@@ -168,6 +168,12 @@ export default function App() {
     }
   };
 
+  // checkout_cart converts the existing cart order in place (status
+  // "cart" -> "pending") rather than handing back a new cart — nothing
+  // else re-syncs rawCart afterward, so without this the old items just
+  // sit in local state even though the backend cart is already gone.
+  const clearCart = () => setRawCart({ order_id: null, status: 'cart', items: [] });
+
   // Cart lines only carry product_id/quantity/unit_price/name_snapshot —
   // merge in the matching catalog product for display fields (icon,
   // category, current_stock) the rest of the app already expects, while
@@ -236,7 +242,7 @@ export default function App() {
           <Route path="/cart" element={<Cart cart={cart} setPage={setPage} updateCartQuantity={updateCartQuantity} removeFromCart={removeFromCart} />} />
           <Route path="/login" element={<Login />} />
           <Route path="/profile" element={<Profile setPage={setPage} />} />
-          <Route path="/checkout" element={<Checkout cartItems={cart} cartOrderId={rawCart.order_id} setPage={setPage} setCurrentOrderId={setCurrentOrderId} />} />
+          <Route path="/checkout" element={<Checkout cartItems={cart} cartOrderId={rawCart.order_id} setPage={setPage} setCurrentOrderId={setCurrentOrderId} clearCart={clearCart} />} />
           <Route path="/success" element={<Success setPage={setPage} currentOrderId={currentOrderId} />} />
           <Route path="*" element={<Home products={products} setPage={setPage} setSelectedCategory={setSelectedCategory} goToProduct={goToProduct} addToCart={addToCart} />} />
         </Routes>
