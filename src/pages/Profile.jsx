@@ -4,6 +4,7 @@ import { userApi } from '../utils/userApi';
 
 const inputStyle = {
   width: '100%',
+  minWidth: 0,
   padding: '10px 12px',
   borderRadius: '6px',
   border: '1px solid #332f2b',
@@ -13,6 +14,9 @@ const inputStyle = {
 };
 
 const labelStyle = { display: 'block', color: '#a1a1a6', fontSize: '0.85rem', marginBottom: '6px' };
+
+const EMPTY_ADDRESS = { address1: '', city: '', province: '', postal_code: '', country: 'Canada' };
+const addressRowStyle = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' };
 
 export default function Profile({ setPage }) {
   // Grab the current user details and the global signOut method from Amplify
@@ -26,7 +30,8 @@ export default function Profile({ setPage }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [email, setEmail] = useState(sessionEmail);
-  const [form, setForm] = useState({ first_name: '', last_name: '', phone: '' });
+  const [form, setForm] = useState({ first_name: '', last_name: '', phone: '', address: null });
+  const [removingAddress, setRemovingAddress] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -37,6 +42,7 @@ export default function Profile({ setPage }) {
           first_name: profile.first_name || '',
           last_name: profile.last_name || '',
           phone: profile.phone || '',
+          address: profile.address || null,
         });
         setEmail(profile.email || sessionEmail);
       })
@@ -55,6 +61,25 @@ export default function Profile({ setPage }) {
 
   const updateField = (field) => (e) =>
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
+
+  const updateAddressField = (field) => (e) =>
+    setForm((prev) => ({ ...prev, address: { ...prev.address, [field]: e.target.value } }));
+
+  const handleAddAddress = () =>
+    setForm((prev) => ({ ...prev, address: { ...EMPTY_ADDRESS } }));
+
+  const handleRemoveAddress = async () => {
+    setRemovingAddress(true);
+    setSaveError(null);
+    try {
+      await userApi.updateProfile({ address: null });
+      setForm((prev) => ({ ...prev, address: null }));
+    } catch (err) {
+      setSaveError(err.message);
+    } finally {
+      setRemovingAddress(false);
+    }
+  };
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -180,6 +205,54 @@ export default function Profile({ setPage }) {
                   onChange={updateField('phone')}
                   style={inputStyle}
                 />
+              </div>
+
+              <div style={{ borderTop: '1px solid #2e2a24', paddingTop: '14px', marginTop: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <span style={labelStyle}>Shipping Address</span>
+                  {form.address && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveAddress}
+                      disabled={removingAddress}
+                      style={{
+                        background: 'none', border: 'none', color: '#f8b4b4', fontSize: '0.8rem',
+                        cursor: removingAddress ? 'not-allowed' : 'pointer', textDecoration: 'underline', padding: 0,
+                      }}
+                    >
+                      {removingAddress ? 'Removing…' : 'Remove'}
+                    </button>
+                  )}
+                </div>
+
+                {form.address ? (
+                  <div style={{ display: 'grid', gap: '10px' }}>
+                    <input
+                      type="text"
+                      placeholder="Street address"
+                      value={form.address.address1}
+                      onChange={updateAddressField('address1')}
+                      style={inputStyle}
+                    />
+                    <div style={addressRowStyle}>
+                      <input type="text" placeholder="City" value={form.address.city} onChange={updateAddressField('city')} style={inputStyle} />
+                      <input type="text" placeholder="Province" value={form.address.province} onChange={updateAddressField('province')} style={inputStyle} />
+                    </div>
+                    <div style={addressRowStyle}>
+                      <input type="text" placeholder="Postal code" value={form.address.postal_code} onChange={updateAddressField('postal_code')} style={inputStyle} />
+                      <input type="text" placeholder="Country" value={form.address.country} onChange={updateAddressField('country')} style={inputStyle} />
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleAddAddress}
+                    className="btn-outline"
+                    style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                  >
+                    + Add shipping address
+                  </button>
+                )}
               </div>
 
               {saveError && <p style={{ color: '#f8b4b4', fontSize: '0.85rem', margin: 0 }}>{saveError}</p>}
