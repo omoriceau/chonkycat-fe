@@ -23,7 +23,7 @@ export default function Checkout({ cartItems, setPage, setCurrentOrderId }) {
   const [shippingData, setShippingData] = useState({
     name: '',
     address1: '',
-    city: 'Toronto', // Defaulting based on typical localized traffic
+    city: 'Toronto', 
     province: 'ON',
     postal_code: '',
     country: 'Canada'
@@ -37,60 +37,78 @@ export default function Checkout({ cartItems, setPage, setCurrentOrderId }) {
     }
   }, [cartItems, setPage]);
 
+  // Helper calculation formulas
+  const calculateSubtotal = () => {
+    return cartItems.reduce((sum, item) => sum + (item.price * item.cartQuantity), 0);
+  };
+
+  const calculateTotal = () => {
+    return calculateSubtotal() * 1.08; // Subtotal + 8% Tax
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setShippingData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleCreateOrder = async (e) => {
+  // Orchestrates Form Submission
+  const handleSubmitShipping = async (e) => {
     e.preventDefault();
     setIsProcessing(true);
     setError(null);
 
-    // 1. Map frontend cart to backend schema expectation
-    // NOTE: Passing item.id (UUID) directly. If backend strictly requires INT, 
-    // this will fail until the API is updated.
-    const itemsForBackend = cartItems.map(item => ({
-      product_id: item.id, 
-      quantity: item.cartQuantity
-    }));
-
-    const orderPayload = {
-      user_id: user ? user.userId : null,
-      customer_email: user ? user.signInDetails?.loginId : "guest@example.com",
-      items: itemsForBackend,
-      customer_notes: customerNotes,
-      shipping: shippingData
-    };
-
     try {
-      // 2. Create the Order
-      const orderResponse = await fetch('https://jvf4xoz10l.execute-api.us-east-1.amazonaws.com/Prod/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderPayload)
-      });
-
-      const orderResult = await orderResponse.json();
-
-      if (!orderResponse.ok) {
-        throw new Error(orderResult.message || "Failed to create order record.");
-      }
-
-      const generatedOrderId = orderResult.orderId || orderResult.id;
+      // 1. Create order records inside the DB
+      const orderData = await handleCreateOrder();
       
-      // Save ID locally for the next API call, and globally for the Success page
-      setLocalOrderId(generatedOrderId);
-      setCurrentOrderId(generatedOrderId); 
+      if (orderData && orderData.id) {
+        setLocalOrderId(orderData.id);
+        if (setCurrentOrderId) setCurrentOrderId(orderData.id);
 
-      // 3. Chain the Payment Intent Call immediately
-      await fetchPaymentIntent(generatedOrderId, itemsForBackend);
+        // 2. Map item data payloads to request a client_secret from Stripe
+        const formattedItems = cartItems.map(item => ({
+          id: item.id,
+          quantity: item.cartQuantity
+        }));
 
+        await fetchPaymentIntent(orderData.id, formattedItems);
+      } else {
+        throw new Error("Invalid response received from the database cluster.");
+      }
     } catch (err) {
-      console.error("Order Creation Error:", err);
-      setError(err.message || "Network error occurred while creating your order.");
+      setError(err.message || "Failed processing shipping configuration.");
       setIsProcessing(false);
     }
+  };
+
+  const handleCreateOrder = async () => {
+    const userId = user?.signInDetails?.loginId || null; 
+
+    const orderPayload = {
+      user_id: userId, 
+      items: cartItems.map(item => ({
+        product_id: item.id, 
+        quantity: item.cartQuantity,
+        unit_price: item.price,
+        name_snapshot: item.name
+      })),
+      shipping: { ...shippingData, notes: customerNotes },
+      subtotal: calculateSubtotal(), 
+      total_amount: calculateTotal() 
+    };
+
+    const orderResponse = await fetch(`${API_BASE_URL}/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(orderPayload)
+    });
+
+    if (!orderResponse.ok) {
+      const errRes = await orderResponse.json().catch(() => ({}));
+      throw new Error(errRes.error || 'Failed to create order in database');
+    }
+
+    return await orderResponse.json(); 
   };
 
   const fetchPaymentIntent = async (orderId, formattedItems) => {
@@ -108,7 +126,7 @@ export default function Checkout({ cartItems, setPage, setCurrentOrderId }) {
 
       if (response.ok && result.client_secret) {
         setClientSecret(result.client_secret);
-        setCheckoutPhase('payment'); // Transition UI to show Stripe
+        setCheckoutPhase('payment'); // Safe transition to reveal the Stripe Element frame
       } else {
         setError(result.message || "Failed to initialize payment gateway.");
       }
@@ -142,7 +160,7 @@ export default function Checkout({ cartItems, setPage, setCurrentOrderId }) {
           <div className="shipping-card" style={{ background: '#fff', padding: '30px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', marginBottom: '30px', opacity: checkoutPhase === 'payment' ? 0.6 : 1 }}>
             <h2 style={{ fontSize: '1.5rem', marginBottom: '20px' }}>Shipping Details</h2>
             
-            <form onSubmit={handleCreateOrder}>
+            <form onSubmit={handleSubmitShipping}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
                 <input required type="text" name="name" placeholder="Full Name" value={shippingData.name} onChange={handleInputChange} disabled={checkoutPhase === 'payment'} style={{ gridColumn: 'span 2', padding: '10px' }} />
                 <input required type="text" name="address1" placeholder="Street Address" value={shippingData.address1} onChange={handleInputChange} disabled={checkoutPhase === 'payment'} style={{ gridColumn: 'span 2', padding: '10px' }} />
