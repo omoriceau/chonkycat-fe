@@ -4,8 +4,6 @@ import { Authenticator, useAuthenticator } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
 import { API_BASE_URL } from './config';
 import { slugify } from './utils/slug';
-import { cartApi } from './utils/cartApi';
-import { peekGuestId, clearGuestId } from './utils/guestId';
 
 // Components
 import Announcement from './components/Announcement';
@@ -65,19 +63,21 @@ export default function App() {
   };
   const currentPage = PATH_PAGES[location.pathname] || location.pathname;
 
-  // 1. GLOBAL STATE
-  // The backend is the source of truth for the cart (see cartApi.js) —
-  // rawCart is its response shape ({order_id, items: [{product_id,
-  // quantity, unit_price, name_snapshot, ...}]}); `cart` below merges that
-  // with `products` for display (icon/category/current_stock aren't part
-  // of a cart line, only the product catalog).
-  const [rawCart, setRawCart] = useState({ order_id: null, status: 'cart', items: [] });
+  // 1. GLOBAL STATE - Initializing from localStorage
+  const [cart, setCart] = useState(() => {
+    const savedCart = localStorage.getItem('chonky_cart');
+    return savedCart ? JSON.parse(savedCart) : [];
+  });
   const [products, setProducts] = useState([]);
-  // Transient "you're logged in" banner — see CartAuthSync below.
   const [loginBanner, setLoginBanner] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [currentOrderId, setCurrentOrderId] = useState(null);
+
+  // Auto-save to localStorage whenever the cart changes
+  useEffect(() => {
+    localStorage.setItem('chonky_cart', JSON.stringify(cart));
+  }, [cart]);
 
   // Fetch products from AWS API Gateway
   useEffect(() => {
@@ -124,79 +124,52 @@ export default function App() {
     fetchProducts();
   }, []);
 
-  // Load whichever cart the caller already has (guest or logged-in) from
-  // the backend on mount — every mutation below re-syncs from its response
-  // rather than guessing the new state locally, so this stays correct
-  // across tabs/devices too.
-  useEffect(() => {
-    cartApi.getCart()
-      .then(setRawCart)
-      .catch((err) => console.error('Failed to load cart:', err));
-  }, []);
-
   const goToProduct = (product) => {
     navigate(`/product/${slugify(product.name)}`);
   };
 
-  const addToCart = async (product, quantity) => {
-    try {
-      setRawCart(await cartApi.addItem(product.id, quantity));
-    } catch (err) {
-      console.error('Failed to add to cart:', err);
-    }
-  };
-
-  const updateCartQuantity = async (productId, newQuantity) => {
-    try {
-      setRawCart(
-        newQuantity <= 0
-          ? await cartApi.removeItem(productId)
-          : await cartApi.updateItemQuantity(productId, newQuantity)
-      );
-    } catch (err) {
-      console.error('Failed to update cart:', err);
-    }
-  };
-
-  const removeFromCart = async (productId) => {
-    try {
-      setRawCart(await cartApi.removeItem(productId));
-    } catch (err) {
-      console.error('Failed to remove from cart:', err);
-    }
-  };
-
-  // Cart lines only carry product_id/quantity/unit_price/name_snapshot —
-  // merge in the matching catalog product for display fields (icon,
-  // category, current_stock) the rest of the app already expects, while
-  // keeping id/name/price/cartQuantity authoritative from the cart itself
-  // (unit_price is the price actually snapshotted at add-to-cart time).
-  const cart = useMemo(() => {
-    return rawCart.items.map((item) => {
-      const product = products.find((p) => String(p.id) === String(item.product_id));
-      return {
-        ...product,
-        id: item.product_id,
-        name: item.name_snapshot,
-        price: parseFloat(item.unit_price),
-        cartQuantity: item.quantity,
-      };
+  // 3. Cart Manipulation Functions
+  const addToCart = (product, quantity) => {
+    setCart(prevCart => {
+      const existingItem = prevCart.find(item => item.id === product.id);
+      if (existingItem) {
+        return prevCart.map(item => 
+          item.id === product.id 
+            ? { ...item, cartQuantity: item.cartQuantity + quantity }
+            : item
+        );
+      }
+      return [...prevCart, { ...product, cartQuantity: quantity }];
     });
-  }, [rawCart, products]);
+  };
 
-  const handleAuthenticated = useCallback(async (user) => {
+  const updateCartQuantity = (productId, newQuantity) => {
+    if (newQuantity <= 0) {
+      removeFromCart(productId);
+      return;
+    }
+    setCart(prevCart => 
+      prevCart.map(item => 
+        item.id === productId ? { ...item, cartQuantity: newQuantity } : item
+      )
+    );
+  };
+
+  const removeFromCart = (productId) => {
+    setCart(prevCart => prevCart.filter(item => item.id !== productId));
+  };
+
+  // 4. Expose this to clear the cart after a successful Stripe payment
+  const clearCart = () => {
+    setCart([]);
+    localStorage.removeItem('chonky_cart');
+  };
+
+  // 5. Authentication (No cart merging required)
+  const handleAuthenticated = useCallback((user) => {
     const loginId = user?.signInDetails?.loginId;
     setLoginBanner(loginId ? `Welcome back, ${loginId}!` : 'Welcome back!');
     setTimeout(() => setLoginBanner(null), 4000);
-
-    const guestId = peekGuestId();
-    if (!guestId) return;
-    try {
-      setRawCart(await cartApi.claimGuestCart(guestId));
-      clearGuestId();
-    } catch (err) {
-      console.error('Failed to claim guest cart:', err);
-    }
   }, []);
 
   const displayProducts = selectedCategory
@@ -231,7 +204,7 @@ export default function App() {
           } />
           <Route path="/product/:slug" element={<ProductDetails products={products} addToCart={addToCart} />} />
           <Route path="/about" element={<About />} />
-          <Route path="/cart" element={<Cart cart={cart} cartOrderId={rawCart.order_id} setPage={setPage} updateCartQuantity={updateCartQuantity} removeFromCart={removeFromCart} />} />
+          <Route path="/cart" element={<Cart cart={cart} setPage={setPage} updateCartQuantity={updateCartQuantity} removeFromCart={removeFromCart} />} />
           <Route path="/login" element={<Login />} />
           <Route path="/profile" element={<Profile setPage={setPage} />} />
           <Route path="/checkout" element={<Checkout cartItems={cart} setPage={setPage} />} />
