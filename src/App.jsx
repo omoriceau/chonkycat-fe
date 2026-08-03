@@ -1,51 +1,58 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { Authenticator, useAuthenticator } from '@aws-amplify/ui-react';
-import '@aws-amplify/ui-react/styles.css';
-import { API_BASE_URL } from './config';
-import { slugify } from './utils/slug';
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
+import { Authenticator, useAuthenticator } from "@aws-amplify/ui-react";
+import "@aws-amplify/ui-react/styles.css";
+import { API_BASE_URL } from "./config";
+import { slugify } from "./utils/slug";
 
 // Components
-import Announcement from './components/Announcement';
-import Header from './components/Header';
-import Footer from './components/Footer';
+import Announcement from "./components/Announcement";
+import Header from "./components/Header";
+import Footer from "./components/Footer";
 
 // Pages
-import Home from './pages/Home';
-import Shop from './pages/Shop';
-import ProductDetails from './pages/ProductDetails';
-import About from './pages/About';
-import Cart from './pages/Cart';
-import Login from './pages/Login';
-import Profile from './pages/Profile';
-import Checkout from './pages/Checkout';
+import Home from "./pages/Home";
+import Shop from "./pages/Shop";
+import ProductDetails from "./pages/ProductDetails";
+import About from "./pages/About";
+import Cart from "./pages/Cart";
+import Login from "./pages/Login";
+import Profile from "./pages/Profile";
+import Checkout from "./pages/Checkout";
 
 // The rest of the tree navigates by calling setPage('shop') etc. — this
 // maps those existing string identifiers onto real routes, so navigation
 // actually changes the URL (back/forward, reload, and sharable links all
 // work) without having to touch every call site individually.
 const PAGE_PATHS = {
-  home: '/',
-  products: '/shop',
-  shop: '/shop',
-  about: '/about',
-  cart: '/cart',
-  login: '/login',
-  profile: '/profile',
-  checkout: '/checkout',
+  home: "/",
+  products: "/shop",
+  shop: "/shop",
+  about: "/about",
+  cart: "/cart",
+  login: "/login",
+  profile: "/profile",
+  checkout: "/checkout",
+  success: "/success",
 };
 
 // Reverse mapping, for Header/NavDrawer's active-link highlighting.
 const PATH_PAGES = {
-  '/': 'home',
-  '/shop': 'products',
-  '/about': 'about',
-  '/cart': 'cart',
-  '/login': 'login',
-  '/profile': 'profile',
-  '/checkout': 'checkout',
+  "/": "home",
+  "/shop": "products",
+  "/about": "about",
+  "/cart": "cart",
+  "/login": "login",
+  "/profile": "profile",
+  "/checkout": "checkout",
 };
-import Success from './pages/Success';
+import Success from "./pages/Success";
 
 export default function App() {
   const navigate = useNavigate();
@@ -55,17 +62,17 @@ export default function App() {
   // wherever they currently are as router state rather than always landing
   // on a fixed page (see Login.jsx's AuthenticatedRedirect).
   const setPage = (pageName) => {
-    if (pageName === 'login') {
+    if (pageName === "login") {
       navigate(PAGE_PATHS.login, { state: { from: location.pathname } });
     } else {
-      navigate(PAGE_PATHS[pageName] || '/');
+      navigate(PAGE_PATHS[pageName] || "/");
     }
   };
   const currentPage = PATH_PAGES[location.pathname] || location.pathname;
 
   // 1. GLOBAL STATE - Initializing from localStorage
   const [cart, setCart] = useState(() => {
-    const savedCart = localStorage.getItem('chonky_cart');
+    const savedCart = localStorage.getItem("chonky_cart");
     return savedCart ? JSON.parse(savedCart) : [];
   });
   const [products, setProducts] = useState([]);
@@ -76,7 +83,7 @@ export default function App() {
 
   // Auto-save to localStorage whenever the cart changes
   useEffect(() => {
-    localStorage.setItem('chonky_cart', JSON.stringify(cart));
+    localStorage.setItem("chonky_cart", JSON.stringify(cart));
   }, [cart]);
 
   // Fetch products from AWS API Gateway
@@ -84,7 +91,7 @@ export default function App() {
     const fetchProducts = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/products`, {
-          method: 'GET' 
+          method: "GET",
         });
 
         if (!response.ok) {
@@ -95,9 +102,10 @@ export default function App() {
         let parsedData = rawData;
 
         if (rawData.body) {
-          parsedData = typeof rawData.body === 'string' 
-            ? JSON.parse(rawData.body) 
-            : rawData.body;
+          parsedData =
+            typeof rawData.body === "string"
+              ? JSON.parse(rawData.body)
+              : rawData.body;
         }
 
         let finalProductsArray = [];
@@ -113,14 +121,13 @@ export default function App() {
         }
 
         setProducts(finalProductsArray);
-
       } catch (err) {
-        console.error('Failed to fetch products from AWS:', err);
+        console.error("Failed to fetch products from AWS:", err);
       } finally {
         setLoading(false);
       }
     };
-    
+
     fetchProducts();
   }, []);
 
@@ -130,13 +137,13 @@ export default function App() {
 
   // 3. Cart Manipulation Functions
   const addToCart = (product, quantity) => {
-    setCart(prevCart => {
-      const existingItem = prevCart.find(item => item.id === product.id);
+    setCart((prevCart) => {
+      const existingItem = prevCart.find((item) => item.id === product.id);
       if (existingItem) {
-        return prevCart.map(item => 
-          item.id === product.id 
+        return prevCart.map((item) =>
+          item.id === product.id
             ? { ...item, cartQuantity: item.cartQuantity + quantity }
-            : item
+            : item,
         );
       }
       return [...prevCart, { ...product, cartQuantity: quantity }];
@@ -148,27 +155,27 @@ export default function App() {
       removeFromCart(productId);
       return;
     }
-    setCart(prevCart => 
-      prevCart.map(item => 
-        item.id === productId ? { ...item, cartQuantity: newQuantity } : item
-      )
+    setCart((prevCart) =>
+      prevCart.map((item) =>
+        item.id === productId ? { ...item, cartQuantity: newQuantity } : item,
+      ),
     );
   };
 
   const removeFromCart = (productId) => {
-    setCart(prevCart => prevCart.filter(item => item.id !== productId));
+    setCart((prevCart) => prevCart.filter((item) => item.id !== productId));
   };
 
   // 4. Expose this to clear the cart after a successful Stripe payment
   const clearCart = () => {
     setCart([]);
-    localStorage.removeItem('chonky_cart');
+    localStorage.removeItem("chonky_cart");
   };
 
   // 5. Authentication (No cart merging required)
   const handleAuthenticated = useCallback((user) => {
     const loginId = user?.signInDetails?.loginId;
-    setLoginBanner(loginId ? `Welcome back, ${loginId}!` : 'Welcome back!');
+    setLoginBanner(loginId ? `Welcome back, ${loginId}!` : "Welcome back!");
     setTimeout(() => setLoginBanner(null), 4000);
   }, []);
 
@@ -183,54 +190,132 @@ export default function App() {
         <div
           role="status"
           style={{
-            position: 'sticky', top: 0, zIndex: 1000,
-            background: 'var(--primary, #e0a93c)', color: '#12100e',
-            textAlign: 'center', padding: '10px 20px',
-            fontWeight: 600, fontSize: '0.9rem',
+            position: "sticky",
+            top: 0,
+            zIndex: 1000,
+            background: "var(--primary, #e0a93c)",
+            color: "#12100e",
+            textAlign: "center",
+            padding: "10px 20px",
+            fontWeight: 600,
+            fontSize: "0.9rem",
           }}
         >
           ✅ {loginBanner}
         </div>
       )}
       <Announcement />
-      <Header currentPage={currentPage} setPage={setPage} cartCount={cart.length} />
+      <Header
+        currentPage={currentPage}
+        setPage={setPage}
+        cartCount={cart.length}
+      />
       <main>
         <Routes>
-          <Route path="/" element={<Home products={products} setPage={setPage} setSelectedCategory={setSelectedCategory} goToProduct={goToProduct} addToCart={addToCart} />} />
-          <Route path="/shop" element={
-            loading
-              ? <div style={{ padding: '60px 20px', textAlign: 'center' }}>Loading products...</div>
-              : <Shop products={displayProducts} selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} goToProduct={goToProduct} addToCart={addToCart} />
-          } />
-          <Route path="/product/:slug" element={<ProductDetails products={products} addToCart={addToCart} />} />
+          <Route
+            path="/"
+            element={
+              <Home
+                products={products}
+                setPage={setPage}
+                setSelectedCategory={setSelectedCategory}
+                goToProduct={goToProduct}
+                addToCart={addToCart}
+              />
+            }
+          />
+          <Route
+            path="/shop"
+            element={
+              loading ? (
+                <div style={{ padding: "60px 20px", textAlign: "center" }}>
+                  Loading products...
+                </div>
+              ) : (
+                <Shop
+                  products={displayProducts}
+                  selectedCategory={selectedCategory}
+                  setSelectedCategory={setSelectedCategory}
+                  goToProduct={goToProduct}
+                  addToCart={addToCart}
+                />
+              )
+            }
+          />
+          <Route
+            path="/product/:slug"
+            element={
+              <ProductDetails products={products} addToCart={addToCart} />
+            }
+          />
           <Route path="/about" element={<About />} />
-          <Route path="/cart" element={<Cart cart={cart} setPage={setPage} updateCartQuantity={updateCartQuantity} removeFromCart={removeFromCart} />} />
+          <Route
+            path="/cart"
+            element={
+              <Cart
+                cart={cart}
+                setPage={setPage}
+                updateCartQuantity={updateCartQuantity}
+                removeFromCart={removeFromCart}
+              />
+            }
+          />
           <Route path="/login" element={<Login />} />
           <Route path="/profile" element={<Profile setPage={setPage} />} />
-          <Route path="/checkout" element={<Checkout cartItems={cart} setPage={setPage} />} />
-          <Route path="*" element={<Home products={products} setPage={setPage} setSelectedCategory={setSelectedCategory} goToProduct={goToProduct} addToCart={addToCart} />} />
+          <Route
+            path="/checkout"
+            element={<Checkout cartItems={cart} setPage={setPage} />}
+          />
+          <Route
+            path="/success"
+            element={
+              <Success
+                orderId={currentOrderId}
+                clearCart={clearCart}
+                setPage={setPage}
+              />
+            }
+          />
+          <Route
+            path="*"
+            element={
+              <Home
+                products={products}
+                setPage={setPage}
+                setSelectedCategory={setSelectedCategory}
+                goToProduct={goToProduct}
+                addToCart={addToCart}
+              />
+            }
+          />
         </Routes>
       </main>
       <Footer />
     </Authenticator.Provider>
   );
 
-// Runs inside <Authenticator.Provider> (its context isn't visible to the
-// component that renders the Provider itself) purely to detect the
-// logged-out -> logged-in transition and fire onAuthenticated exactly once
-// when it happens — covers both "logged into an existing account" and
-// "just finished signing up".
-function CartAuthSync({ onAuthenticated }) {
-  const { authStatus, user } = useAuthenticator((context) => [context.authStatus, context.user]);
-  const previousStatus = useRef(authStatus);
+  // Runs inside <Authenticator.Provider> (its context isn't visible to the
+  // component that renders the Provider itself) purely to detect the
+  // logged-out -> logged-in transition and fire onAuthenticated exactly once
+  // when it happens — covers both "logged into an existing account" and
+  // "just finished signing up".
+  function CartAuthSync({ onAuthenticated }) {
+    const { authStatus, user } = useAuthenticator((context) => [
+      context.authStatus,
+      context.user,
+    ]);
+    const previousStatus = useRef(authStatus);
 
-  useEffect(() => {
-    if (previousStatus.current !== 'authenticated' && authStatus === 'authenticated') {
-      onAuthenticated(user);
-    }
-    previousStatus.current = authStatus;
-  }, [authStatus, user, onAuthenticated]);
+    useEffect(() => {
+      if (
+        previousStatus.current !== "authenticated" &&
+        authStatus === "authenticated"
+      ) {
+        onAuthenticated(user);
+      }
+      previousStatus.current = authStatus;
+    }, [authStatus, user, onAuthenticated]);
 
-  return null;
-}
+    return null;
+  }
 }
