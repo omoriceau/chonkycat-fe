@@ -4,11 +4,13 @@ import { Elements } from "@stripe/react-stripe-js";
 import CheckoutForm from "../components/CheckoutForm";
 import { API_BASE_URL } from "../config";
 import { useAuthenticator } from "@aws-amplify/ui-react";
+import { getOrCreateGuestId } from "../utils/guestId";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 export default function Checkout({ cartItems, setPage, setCurrentOrderId }) {
   const { user } = useAuthenticator((context) => [context.user]);
+  const loginEmail = user?.signInDetails?.loginId || "";
 
   // Phase Management State
   const [checkoutPhase, setCheckoutPhase] = useState("shipping"); // 'shipping' | 'payment'
@@ -29,6 +31,15 @@ export default function Checkout({ cartItems, setPage, setCurrentOrderId }) {
     country: "Canada",
   });
   const [customerNotes, setCustomerNotes] = useState("");
+  const [email, setEmail] = useState(loginEmail);
+
+  // Keep the email field in sync once the signed-in user's session resolves
+  // (it isn't available yet on first render).
+  useEffect(() => {
+    if (loginEmail) {
+      setEmail(loginEmail);
+    }
+  }, [loginEmail]);
 
   // Protect the route: Bounce back if cart is empty
   useEffect(() => {
@@ -68,13 +79,8 @@ export default function Checkout({ cartItems, setPage, setCurrentOrderId }) {
         setLocalOrderId(orderData.id);
         if (setCurrentOrderId) setCurrentOrderId(orderData.id);
 
-        // 2. Map item data payloads to request a client_secret from Stripe
-        const formattedItems = cartItems.map((item) => ({
-          id: item.id,
-          quantity: item.cartQuantity,
-        }));
-
-        await fetchPaymentIntent(orderData.id, formattedItems);
+        // 2. Request a client_secret from Stripe for this order
+        await fetchPaymentIntent(orderData.id);
       } else {
         throw new Error("Invalid response received from the database cluster.");
       }
@@ -85,10 +91,11 @@ export default function Checkout({ cartItems, setPage, setCurrentOrderId }) {
   };
 
   const handleCreateOrder = async () => {
-    const userId = user?.signInDetails?.loginId || null;
+    const userId = user?.userId || `guest_${getOrCreateGuestId()}`;
 
     const orderPayload = {
       user_id: userId,
+      customer_email: email,
       items: cartItems.map((item) => ({
         product_id: item.id,
         quantity: item.cartQuantity,
@@ -114,14 +121,13 @@ export default function Checkout({ cartItems, setPage, setCurrentOrderId }) {
     return await orderResponse.json();
   };
 
-  const fetchPaymentIntent = async (orderId, formattedItems) => {
+  const fetchPaymentIntent = async (orderId) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/payments/create-intent`, {
+      const response = await fetch(`${API_BASE_URL}/payments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          items: formattedItems,
-          orderId: orderId,
+          order_id: orderId,
         }),
       });
 
@@ -199,6 +205,16 @@ export default function Checkout({ cartItems, setPage, setCurrentOrderId }) {
                   marginBottom: "15px",
                 }}
               >
+                <input
+                  required
+                  type="email"
+                  name="email"
+                  placeholder="Email Address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={checkoutPhase === "payment" || !!loginEmail}
+                  style={{ gridColumn: "span 2", padding: "10px" }}
+                />
                 <input
                   required
                   type="text"
