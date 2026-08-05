@@ -52,7 +52,7 @@ export default function Cart({
 
       console.log("Inventory check payload:", inventoryItems);
 
-      const response = await fetch(`${API_BASE_URL}/products/inventory-check`, {
+      const response = await fetch(`${API_BASE_URL}/products/check-inventory`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
