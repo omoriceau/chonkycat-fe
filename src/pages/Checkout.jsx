@@ -74,13 +74,14 @@ export default function Checkout({ cartItems, setPage, setCurrentOrderId }) {
     try {
       // 1. Create order records inside the DB
       const orderData = await handleCreateOrder();
+      const orderId = orderData?.order?.order_id;
 
-      if (orderData && orderData.id) {
-        setLocalOrderId(orderData.id);
-        if (setCurrentOrderId) setCurrentOrderId(orderData.id);
+      if (orderId) {
+        setLocalOrderId(orderId);
+        if (setCurrentOrderId) setCurrentOrderId(orderId);
 
         // 2. Request a client_secret from Stripe for this order
-        await fetchPaymentIntent(orderData.id);
+        await fetchPaymentIntent(orderId);
       } else {
         throw new Error("Invalid response received from the database cluster.");
       }
