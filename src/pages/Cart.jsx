@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuthenticator } from "@aws-amplify/ui-react";
 import { API_BASE_URL, IMAGES_BASE_URL } from "../config";
 
@@ -8,41 +8,103 @@ export default function Cart({
   updateCartQuantity,
   removeFromCart,
 }) {
-  const [isLoading, setIsLoading] = useState(false);
+  const [checkingInventory, setCheckingInventory] = useState(false);
+  const [inventoryError, setInventoryError] = useState("");
+  const [unavailableItems, setUnavailableItems] = useState([]);
+
   const { user } = useAuthenticator((context) => [context.user]);
+
+  useEffect(() => {
+    setInventoryError("");
+    setUnavailableItems([]);
+  }, [cart]);
 
   const total = cart.reduce(
     (sum, item) => sum + item.price * item.cartQuantity,
     0,
   );
 
-  const handleProceedToCheckout = async () => {
-    setIsLoading(true);
+  const handleCheckout = async () => {
+    if (cart.length === 0 || checkingInventory) {
+      return;
+    }
+
+    setCheckingInventory(true);
+    setInventoryError("");
+    setUnavailableItems([]);
+
     try {
-      const checkoutPayload = cart.map((item) => ({
-        product_id: item.id,
-        quantity: item.cartQuantity,
+      const inventoryItems = cart.map((item) => ({
+        sku: item.sku,
+        quantity: Number(item.cartQuantity),
       }));
 
-      // 1. Verify inventory pre-flight
-      const response = await fetch(`${API_BASE_URL}/check-inventory`, {
+      const hasInvalidItem = inventoryItems.some(
+        (item) =>
+          !item.sku || !Number.isInteger(item.quantity) || item.quantity <= 0,
+      );
+
+      if (hasInvalidItem) {
+        throw new Error(
+          "One or more cart items have an invalid SKU or quantity.",
+        );
+      }
+
+      console.log("Inventory check payload:", inventoryItems);
+
+      const response = await fetch(`${API_BASE_URL}/products/inventory-check`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: checkoutPayload }),
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(inventoryItems),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Inventory check failed");
+        let errorMessage = `Inventory check failed with HTTP ${response.status}.`;
+
+        try {
+          const errorData = await response.json();
+
+          errorMessage = errorData?.message || errorData?.error || errorMessage;
+        } catch {
+          // Keep the HTTP-based message when the response is not JSON.
+        }
+
+        throw new Error(errorMessage);
       }
 
-      // 2. Safely route to the checkout page view
+      const rawData = await response.json();
+      let inventoryResult = rawData;
+
+      if (rawData?.body !== undefined) {
+        inventoryResult =
+          typeof rawData.body === "string"
+            ? JSON.parse(rawData.body)
+            : rawData.body;
+      }
+
+      if (!Array.isArray(inventoryResult)) {
+        throw new Error("The inventory API returned an unexpected response.");
+      }
+
+      if (inventoryResult.length > 0) {
+        setUnavailableItems(inventoryResult);
+        return;
+      }
+
       setPage("checkout");
     } catch (error) {
-      console.error("Checkout error:", error);
-      alert(`Cannot proceed: ${error.message}`);
+      console.error("Inventory check failed:", error);
+
+      setInventoryError(
+        error instanceof Error
+          ? error.message
+          : "Inventory could not be verified. Please try again.",
+      );
     } finally {
-      setIsLoading(false);
+      setCheckingInventory(false);
     }
   };
 
@@ -265,29 +327,111 @@ export default function Cart({
                 </div>
 
                 <button
+                  type="button"
                   className="btn-primary"
-                  onClick={handleProceedToCheckout}
-                  disabled={isLoading}
+                  onClick={handleCheckout}
+                  disabled={cart.length === 0 || checkingInventory}
                   style={{
                     width: "100%",
                     marginTop: "20px",
-                    opacity: isLoading ? 0.7 : 1,
-                    cursor: isLoading ? "not-allowed" : "pointer",
+                    opacity: cart.length === 0 || checkingInventory ? 0.7 : 1,
+                    cursor:
+                      cart.length === 0 || checkingInventory
+                        ? "not-allowed"
+                        : "pointer",
                   }}
                 >
-                  {isLoading ? "Checking Stock... 🐾" : "Proceed to Checkout"}
+                  {checkingInventory
+                    ? "Checking Stock... 🐾"
+                    : "Proceed to Checkout"}
                 </button>
 
+                {inventoryError && (
+                  <div
+                    role="alert"
+                    style={{
+                      marginTop: "16px",
+                      padding: "12px",
+                      border: "1px solid #b42318",
+                      borderRadius: "6px",
+                    }}
+                  >
+                    {inventoryError}
+                  </div>
+                )}
+
+                {unavailableItems.length > 0 && (
+                  <div
+                    role="alert"
+                    style={{
+                      marginTop: "16px",
+                      padding: "12px",
+                      border: "1px solid #b42318",
+                      borderRadius: "6px",
+                    }}
+                  >
+                    <strong>
+                      Some items are no longer available in the requested
+                      quantity:
+                    </strong>
+
+                    <ul>
+                      {unavailableItems.map((item, index) => {
+                        const returnedSku =
+                          typeof item === "string"
+                            ? item
+                            : (item.sku ??
+                              item.product_id ??
+                              item.id ??
+                              `item-${index}`);
+
+                        const cartProduct = cart.find(
+                          (cartItem) =>
+                            String(cartItem.sku) === String(returnedSku),
+                        );
+
+                        const productName =
+                          typeof item === "object"
+                            ? (item.name ??
+                              item.product_name ??
+                              cartProduct?.name ??
+                              returnedSku)
+                            : (cartProduct?.name ?? returnedSku);
+
+                        const availableStock =
+                          typeof item === "object"
+                            ? (item.available_quantity ??
+                              item.available_stock ??
+                              item.current_stock)
+                            : undefined;
+
+                        return (
+                          <li key={`${returnedSku}-${index}`}>
+                            {productName}
+                            {availableStock !== undefined
+                              ? ` — only ${availableStock} available`
+                              : " — insufficient inventory"}
+                          </li>
+                        );
+                      })}
+                    </ul>
+
+                    <p>Please adjust your cart before continuing.</p>
+                  </div>
+                )}
                 <button
+                  type="button"
                   className="btn-outline"
                   style={{
                     width: "100%",
                     marginTop: "10px",
                     color: "var(--text)",
                     borderColor: "var(--border)",
+                    opacity: checkingInventory ? 0.7 : 1,
+                    cursor: checkingInventory ? "not-allowed" : "pointer",
                   }}
                   onClick={() => setPage("products")}
-                  disabled={isLoading}
+                  disabled={checkingInventory}
                 >
                   Continue Shopping
                 </button>

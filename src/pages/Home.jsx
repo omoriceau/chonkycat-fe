@@ -1,28 +1,57 @@
-import { useMemo } from 'react';
-import ProductCard from '../components/ProductCard';
+import { useMemo } from "react";
+import ProductCard from "../components/ProductCard";
 
-export default function Home({ products, setPage, setSelectedCategory, addToCart, goToProduct }) {
-
+export default function Home({
+  products,
+  setPage,
+  setSelectedCategory,
+  addToCart,
+  goToProduct,
+}) {
   // Create a randomized list of featured products from live AWS data
   const featured = useMemo(() => {
-    return [...products]
-      .sort(() => 0.5 - Math.random())
-      .slice(0, 4);
+    return [...products].sort(() => 0.5 - Math.random()).slice(0, 4);
   }, [products]);
 
   // Dynamically calculate inventory counts from live data
   const categories = [
-    { name: 'Dry Food', icon: '🥣', count: products.filter(p => p.category === 'Dry Food').length },
-    { name: 'Wet Food', icon: '🫙', count: products.filter(p => p.category === 'Wet Food').length },
-    { name: 'Snacks', icon: '🐡', count: products.filter(p => p.category === 'Snacks').length },
-    { name: 'Bundle', icon: '📦', count: products.filter(p => p.category === 'Bundle').length }
+    {
+      name: "Dry Food",
+      icon: "🥣",
+      count: products.filter((p) => p.category === "Dry Food").length,
+    },
+    {
+      name: "Wet Food",
+      icon: "🫙",
+      count: products.filter((p) => p.category === "Wet Food").length,
+    },
+    {
+      name: "Snacks",
+      icon: "🐡",
+      count: products.filter((p) => p.category === "Snacks").length,
+    },
+    {
+      name: "Bundle",
+      icon: "📦",
+      count: products.filter((p) => p.category === "Bundle").length,
+    },
   ];
 
   const hallOfFame = [
-    { name: 'Sir Fluffington', owner: 'Margaret T.', icon: '😺', stars: '★★★★★' },
-    { name: 'Lord Butterscotch', owner: 'James W.', icon: '🐱', stars: '★★★★★' },
-    { name: 'Duchess Pudding', owner: 'Sarah K.', icon: '😸', stars: '★★★★★' },
-    { name: 'Baron Von Chonk', owner: 'Dave P.', icon: '🙀', stars: '★★★★★' }
+    {
+      name: "Sir Fluffington",
+      owner: "Margaret T.",
+      icon: "😺",
+      stars: "★★★★★",
+    },
+    {
+      name: "Lord Butterscotch",
+      owner: "James W.",
+      icon: "🐱",
+      stars: "★★★★★",
+    },
+    { name: "Duchess Pudding", owner: "Sarah K.", icon: "😸", stars: "★★★★★" },
+    { name: "Baron Von Chonk", owner: "Dave P.", icon: "🙀", stars: "★★★★★" },
   ];
 
   return (
@@ -34,13 +63,33 @@ export default function Home({ products, setPage, setSelectedCategory, addToCart
         <div className="hero-inner container">
           <div>
             <div className="hero-badge">
-              <span>⭐ #1 Premium Cat Food Brand 2025</span>
+              <span>⭐ #1 Premium Cat Food Brand 2026</span>
             </div>
-            <h1>Food For<br /><em>Distinguished</em><br />Chonks</h1>
-            <p className="hero-sub">Premium recipes crafted for cats who appreciate the finer things in life. Because every lap cat deserves a throne — and a full bowl.</p>
+            <h1>
+              Food For
+              <br />
+              <em>Distinguished</em>
+              <br />
+              Chonks
+            </h1>
+            <p className="hero-sub">
+              Premium recipes crafted for cats who appreciate the finer things
+              in life. Because every lap cat deserves a throne — and a full
+              bowl.
+            </p>
             <div className="hero-cta">
-              <button className="btn-primary" onClick={() => setPage('products')}>Shop Dry Food</button>
-              <button className="btn-outline" onClick={() => setPage('products')}>Shop Wet Food</button>
+              <button
+                className="btn-primary"
+                onClick={() => setPage("products")}
+              >
+                Shop Dry Food
+              </button>
+              <button
+                className="btn-outline"
+                onClick={() => setPage("products")}
+              >
+                Shop Wet Food
+              </button>
             </div>
             <div className="hero-stats">
               <div>
@@ -59,9 +108,12 @@ export default function Home({ products, setPage, setSelectedCategory, addToCart
           </div>
           <div className="hero-image-wrap">
             <div className="hero-image-frame">
-              <img src="/chonky-cat.png" alt="Chonky cat" style={{ maxWidth: '100%', height: 'auto' }} />
+              <img
+                src="/chonky-cat.png"
+                alt="Chonky cat"
+                style={{ maxWidth: "100%", height: "auto" }}
+              />
             </div>
-            <div className="hero-image-badge">Extra Flavor. Extra Chonk.</div>
           </div>
         </div>
       </section>
@@ -98,18 +150,20 @@ export default function Home({ products, setPage, setSelectedCategory, addToCart
         <div className="container">
           <div className="section-header">
             <span className="section-eyebrow">Chef's Selection</span>
-            <h2 className="section-title">Featured <em>Products</em></h2>
+            <h2 className="section-title">
+              Featured <em>Products</em>
+            </h2>
             <div className="section-rule"></div>
           </div>
           <div className="products-grid">
-              {featured.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    {...product}
-                    onClick={() => goToProduct(product)}
-                    onAddToCart={() => addToCart(product, 1)}
-                  />
-              ))}
+            {featured.map((product) => (
+              <ProductCard
+                key={product.id}
+                {...product}
+                onClick={() => goToProduct(product)}
+                onAddToCart={() => addToCart(product, 1)}
+              />
+            ))}
           </div>
         </div>
       </section>
@@ -119,15 +173,21 @@ export default function Home({ products, setPage, setSelectedCategory, addToCart
         <div className="container">
           <div className="section-header">
             <span className="section-eyebrow">The Menu</span>
-            <h2 className="section-title">Shop By <em>Category</em></h2>
+            <h2 className="section-title">
+              Shop By <em>Category</em>
+            </h2>
             <div className="section-rule"></div>
           </div>
           <div className="cat-grid">
             {categories.map((cat, i) => (
-              <div key={i} className="cat-card" onClick={() => {
-                setSelectedCategory(cat.name);
-                setPage('products');
-              }}>
+              <div
+                key={i}
+                className="cat-card"
+                onClick={() => {
+                  setSelectedCategory(cat.name);
+                  setPage("products");
+                }}
+              >
                 <div className="cat-icon">{cat.icon}</div>
                 <div className="cat-name">{cat.name}</div>
                 <div className="cat-count">{cat.count}</div>
@@ -142,7 +202,9 @@ export default function Home({ products, setPage, setSelectedCategory, addToCart
         <div className="container">
           <div className="section-header">
             <span className="section-eyebrow">Our Community</span>
-            <h2 className="section-title">Chonky Hall <em>of Fame</em></h2>
+            <h2 className="section-title">
+              Chonky Hall <em>of Fame</em>
+            </h2>
             <div className="section-rule"></div>
           </div>
           <div className="hof-grid">
@@ -163,13 +225,20 @@ export default function Home({ products, setPage, setSelectedCategory, addToCart
       {/* NEWSLETTER */}
       <section className="newsletter">
         <div className="container">
-          <h2>Get Exclusive <em>Chonk Deals</em></h2>
-          <p>New flavors, insider discounts, and chonky cat content delivered straight to your inbox.</p>
+          <h2>
+            Get Exclusive <em>Chonk Deals</em>
+          </h2>
+          <p>
+            New flavors, insider discounts, and chonky cat content delivered
+            straight to your inbox.
+          </p>
           <div className="nl-form">
             <input type="email" placeholder="youremail@example.com" />
             <button>Subscribe</button>
           </div>
-          <div className="nl-note">No spam. Only premium chonk content. Unsubscribe anytime.</div>
+          <div className="nl-note">
+            No spam. Only premium chonk content. Unsubscribe anytime.
+          </div>
         </div>
       </section>
     </>

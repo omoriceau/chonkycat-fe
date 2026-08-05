@@ -1,13 +1,8 @@
-import React, {
-  useState,
-  useEffect,
-  useMemo,
-  useCallback,
-  useRef,
-} from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { Authenticator, useAuthenticator } from "@aws-amplify/ui-react";
 import "@aws-amplify/ui-react/styles.css";
+
 import { API_BASE_URL } from "./config";
 import { slugify } from "./utils/slug";
 
@@ -25,11 +20,9 @@ import Cart from "./pages/Cart";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import Checkout from "./pages/Checkout";
+import Success from "./pages/Success";
 
-// The rest of the tree navigates by calling setPage('shop') etc. — this
-// maps those existing string identifiers onto real routes, so navigation
-// actually changes the URL (back/forward, reload, and sharable links all
-// work) without having to touch every call site individually.
+// Maps existing setPage("shop") style navigation to React Router paths.
 const PAGE_PATHS = {
   home: "/",
   products: "/shop",
@@ -42,7 +35,7 @@ const PAGE_PATHS = {
   success: "/success",
 };
 
-// Reverse mapping, for Header/NavDrawer's active-link highlighting.
+// Used by Header and NavDrawer to determine the active page.
 const PATH_PAGES = {
   "/": "home",
   "/shop": "products",
@@ -51,57 +44,129 @@ const PATH_PAGES = {
   "/login": "login",
   "/profile": "profile",
   "/checkout": "checkout",
+  "/success": "success",
 };
-import Success from "./pages/Success";
+
+/**
+ * Detects when a customer has changed from logged out to authenticated.
+ *
+ * This component must be rendered inside Authenticator.Provider because it
+ * reads Amplify authentication context.
+ */
+function CartAuthSync({ onAuthenticated }) {
+  const { authStatus, user } = useAuthenticator((context) => [
+    context.authStatus,
+    context.user,
+  ]);
+
+  const previousStatus = useRef(authStatus);
+
+  useEffect(() => {
+    if (
+      previousStatus.current !== "authenticated" &&
+      authStatus === "authenticated"
+    ) {
+      onAuthenticated(user);
+    }
+
+    previousStatus.current = authStatus;
+  }, [authStatus, user, onAuthenticated]);
+
+  return null;
+}
 
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Login needs to know where to send the user back to afterward — capture
-  // wherever they currently are as router state rather than always landing
-  // on a fixed page (see Login.jsx's AuthenticatedRedirect).
-  const setPage = (pageName) => {
-    if (pageName === "login") {
-      navigate(PAGE_PATHS.login, { state: { from: location.pathname } });
-    } else {
+  /**
+   * Allows existing components to navigate using values such as:
+   * setPage("shop")
+   * setPage("cart")
+   */
+  const setPage = useCallback(
+    (pageName) => {
+      if (pageName === "login") {
+        navigate(PAGE_PATHS.login, {
+          state: {
+            from: location.pathname,
+          },
+        });
+
+        return;
+      }
+
       navigate(PAGE_PATHS[pageName] || "/");
-    }
-  };
+    },
+    [navigate, location.pathname],
+  );
+
   const currentPage = PATH_PAGES[location.pathname] || location.pathname;
 
-  // 1. GLOBAL STATE - Initializing from localStorage
+  // Load the saved browser cart when the application starts.
   const [cart, setCart] = useState(() => {
-    const savedCart = localStorage.getItem("chonky_cart");
-    return savedCart ? JSON.parse(savedCart) : [];
+    try {
+      const savedCart = localStorage.getItem("chonky_cart");
+
+      return savedCart ? JSON.parse(savedCart) : [];
+    } catch (error) {
+      console.error("Failed to read the saved cart:", error);
+      return [];
+    }
   });
+
   const [products, setProducts] = useState([]);
+  const [productsLoaded, setProductsLoaded] = useState(false);
+  const [productLoadError, setProductLoadError] = useState(null);
   const [loginBanner, setLoginBanner] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [currentOrderId, setCurrentOrderId] = useState(null);
 
-  // Auto-save to localStorage whenever the cart changes
+  /**
+   * EFFECT 1:
+   * Save the cart to localStorage whenever it changes.
+   */
   useEffect(() => {
-    localStorage.setItem("chonky_cart", JSON.stringify(cart));
+    try {
+      localStorage.setItem("chonky_cart", JSON.stringify(cart));
+    } catch (error) {
+      console.error("Failed to save the cart:", error);
+    }
   }, [cart]);
 
-  // Fetch products from AWS API Gateway
+  /**
+   * EFFECT 2:
+   * Load products once when the application starts.
+   */
   useEffect(() => {
+    let requestCancelled = false;
+
     const fetchProducts = async () => {
+      setLoading(true);
+      setProductLoadError(null);
+
       try {
         const response = await fetch(`${API_BASE_URL}/products`, {
           method: "GET",
+          headers: {
+            Accept: "application/json",
+          },
         });
 
         if (!response.ok) {
-          throw new Error(`AWS API returned status: ${response.status}`);
+          throw new Error(`Product API returned HTTP ${response.status}.`);
         }
 
         const rawData = await response.json();
         let parsedData = rawData;
 
-        if (rawData.body) {
+        /*
+         * Some Lambda/API Gateway responses contain the actual response
+         * inside a body property. Support both direct responses and wrapped
+         * Lambda responses.
+         */
+        if (rawData?.body !== undefined) {
           parsedData =
             typeof rawData.body === "string"
               ? JSON.parse(rawData.body)
@@ -112,80 +177,239 @@ export default function App() {
 
         if (Array.isArray(parsedData)) {
           finalProductsArray = parsedData;
-        } else if (parsedData && Array.isArray(parsedData.Items)) {
+        } else if (Array.isArray(parsedData?.Items)) {
           finalProductsArray = parsedData.Items;
-        } else if (parsedData && Array.isArray(parsedData.products)) {
+        } else if (Array.isArray(parsedData?.products)) {
           finalProductsArray = parsedData.products;
-        } else if (parsedData && Array.isArray(parsedData.data)) {
+        } else if (Array.isArray(parsedData?.data)) {
           finalProductsArray = parsedData.data;
+        } else {
+          throw new Error(
+            "The product API response did not contain a product array.",
+          );
         }
 
-        setProducts(finalProductsArray);
-      } catch (err) {
-        console.error("Failed to fetch products from AWS:", err);
+        if (!requestCancelled) {
+          setProducts(finalProductsArray);
+          setProductsLoaded(true);
+        }
+      } catch (error) {
+        console.error("Failed to fetch products from AWS:", error);
+
+        if (!requestCancelled) {
+          setProductLoadError(
+            error instanceof Error
+              ? error.message
+              : "Products could not be loaded.",
+          );
+        }
       } finally {
-        setLoading(false);
+        if (!requestCancelled) {
+          setLoading(false);
+        }
       }
     };
 
     fetchProducts();
+
+    /*
+     * Prevent state updates if App is unmounted while the request is still
+     * running.
+     */
+    return () => {
+      requestCancelled = true;
+    };
   }, []);
 
+  /**
+   * EFFECT 3:
+   * Reconcile the saved cart with current data returned by /products.
+   *
+   * This updates:
+   * - price
+   * - product name
+   * - image URL
+   * - category
+   * - current stock
+   *
+   * It preserves the quantity selected by the customer, but reduces the
+   * quantity when current stock is lower.
+   */
+  useEffect(() => {
+    if (!productsLoaded) {
+      return;
+    }
+
+    setCart((previousCart) => {
+      const productsById = new Map(
+        products.map((product) => [String(product.id), product]),
+      );
+
+      return previousCart.flatMap((cartItem) => {
+        const currentProduct = productsById.get(String(cartItem.id));
+
+        /*
+         * Remove products that no longer exist or are no longer returned
+         * by the API.
+         */
+        if (!currentProduct) {
+          return [];
+        }
+
+        const currentStock = Number(currentProduct.current_stock ?? 0);
+
+        const requestedQuantity = Number(cartItem.cartQuantity ?? 1);
+
+        // Remove products that are now out of stock.
+        if (!Number.isFinite(currentStock) || currentStock <= 0) {
+          return [];
+        }
+
+        const safeRequestedQuantity =
+          Number.isFinite(requestedQuantity) && requestedQuantity > 0
+            ? requestedQuantity
+            : 1;
+
+        return [
+          {
+            // Use the latest product information from the API.
+            ...currentProduct,
+
+            // Preserve quantity without allowing it to exceed stock.
+            cartQuantity: Math.min(safeRequestedQuantity, currentStock),
+          },
+        ];
+      });
+    });
+  }, [products, productsLoaded]);
+
   const goToProduct = (product) => {
+    if (!product?.name) {
+      console.error(
+        "Unable to navigate because the product has no name.",
+        product,
+      );
+      return;
+    }
+
     navigate(`/product/${slugify(product.name)}`);
   };
 
-  // 3. Cart Manipulation Functions
-  const addToCart = (product, quantity) => {
-    setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item.id === product.id);
+  /**
+   * Add a product to the local browser cart.
+   *
+   * This prevents the cart quantity from exceeding the last known stock
+   * value. The backend must still revalidate inventory before payment.
+   */
+  const addToCart = (product, quantity = 1) => {
+    setCart((previousCart) => {
+      const stock = Number(product.current_stock ?? 0);
+      const requestedQuantity = Number(quantity);
+
+      if (
+        !Number.isFinite(stock) ||
+        stock <= 0 ||
+        !Number.isFinite(requestedQuantity) ||
+        requestedQuantity <= 0
+      ) {
+        return previousCart;
+      }
+
+      const existingItem = previousCart.find(
+        (item) => String(item.id) === String(product.id),
+      );
+
       if (existingItem) {
-        return prevCart.map((item) =>
-          item.id === product.id
-            ? { ...item, cartQuantity: item.cartQuantity + quantity }
+        return previousCart.map((item) =>
+          String(item.id) === String(product.id)
+            ? {
+                ...item,
+                ...product,
+                cartQuantity: Math.min(
+                  Number(item.cartQuantity ?? 0) + requestedQuantity,
+                  stock,
+                ),
+              }
             : item,
         );
       }
-      return [...prevCart, { ...product, cartQuantity: quantity }];
+
+      return [
+        ...previousCart,
+        {
+          ...product,
+          cartQuantity: Math.min(requestedQuantity, stock),
+        },
+      ];
     });
   };
 
+  /**
+   * Update an existing cart item's quantity.
+   *
+   * The quantity is capped using the item's most recently loaded stock
+   * value.
+   */
   const updateCartQuantity = (productId, newQuantity) => {
-    if (newQuantity <= 0) {
+    const requestedQuantity = Number(newQuantity);
+
+    if (!Number.isFinite(requestedQuantity) || requestedQuantity <= 0) {
       removeFromCart(productId);
       return;
     }
-    setCart((prevCart) =>
-      prevCart.map((item) =>
-        item.id === productId ? { ...item, cartQuantity: newQuantity } : item,
-      ),
+
+    setCart((previousCart) =>
+      previousCart.map((item) => {
+        if (String(item.id) !== String(productId)) {
+          return item;
+        }
+
+        const currentStock = Number(item.current_stock ?? 0);
+
+        if (!Number.isFinite(currentStock) || currentStock <= 0) {
+          return item;
+        }
+
+        return {
+          ...item,
+          cartQuantity: Math.min(requestedQuantity, currentStock),
+        };
+      }),
     );
   };
 
   const removeFromCart = (productId) => {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== productId));
+    setCart((previousCart) =>
+      previousCart.filter((item) => String(item.id) !== String(productId)),
+    );
   };
 
-  // 4. Expose this to clear the cart after a successful Stripe payment
+  /**
+   * Clear the local cart after a successful Stripe payment.
+   */
   const clearCart = () => {
     setCart([]);
     localStorage.removeItem("chonky_cart");
   };
 
-  // 5. Authentication (No cart merging required)
   const handleAuthenticated = useCallback((user) => {
     const loginId = user?.signInDetails?.loginId;
+
     setLoginBanner(loginId ? `Welcome back, ${loginId}!` : "Welcome back!");
-    setTimeout(() => setLoginBanner(null), 4000);
+
+    window.setTimeout(() => {
+      setLoginBanner(null);
+    }, 4000);
   }, []);
 
   const displayProducts = selectedCategory
-    ? products.filter((p) => p.category === selectedCategory)
+    ? products.filter((product) => product.category === selectedCategory)
     : products;
 
   return (
     <Authenticator.Provider>
       <CartAuthSync onAuthenticated={handleAuthenticated} />
+
       {loginBanner && (
         <div
           role="status"
@@ -204,12 +428,18 @@ export default function App() {
           ✅ {loginBanner}
         </div>
       )}
+
       <Announcement />
+
       <Header
         currentPage={currentPage}
         setPage={setPage}
-        cartCount={cart.length}
+        cartCount={cart.reduce(
+          (total, item) => total + Number(item.cartQuantity ?? 0),
+          0,
+        )}
       />
+
       <main>
         <Routes>
           <Route
@@ -224,12 +454,35 @@ export default function App() {
               />
             }
           />
+
           <Route
             path="/shop"
             element={
               loading ? (
-                <div style={{ padding: "60px 20px", textAlign: "center" }}>
+                <div
+                  style={{
+                    padding: "60px 20px",
+                    textAlign: "center",
+                  }}
+                >
                   Loading products...
+                </div>
+              ) : productLoadError ? (
+                <div
+                  role="alert"
+                  style={{
+                    padding: "60px 20px",
+                    textAlign: "center",
+                  }}
+                >
+                  <h2>Products could not be loaded</h2>
+                  <p>{productLoadError}</p>
+                  <button
+                    type="button"
+                    onClick={() => window.location.reload()}
+                  >
+                    Try again
+                  </button>
                 </div>
               ) : (
                 <Shop
@@ -242,13 +495,16 @@ export default function App() {
               )
             }
           />
+
           <Route
             path="/product/:slug"
             element={
               <ProductDetails products={products} addToCart={addToCart} />
             }
           />
+
           <Route path="/about" element={<About />} />
+
           <Route
             path="/cart"
             element={
@@ -260,12 +516,23 @@ export default function App() {
               />
             }
           />
+
           <Route path="/login" element={<Login />} />
+
           <Route path="/profile" element={<Profile setPage={setPage} />} />
+
           <Route
             path="/checkout"
-            element={<Checkout cartItems={cart} setPage={setPage} />}
+            element={
+              <Checkout
+                cartItems={cart}
+                setPage={setPage}
+                setCurrentOrderId={setCurrentOrderId}
+                clearCart={clearCart}
+              />
+            }
           />
+
           <Route
             path="/success"
             element={
@@ -276,6 +543,7 @@ export default function App() {
               />
             }
           />
+
           <Route
             path="*"
             element={
@@ -290,32 +558,8 @@ export default function App() {
           />
         </Routes>
       </main>
+
       <Footer />
     </Authenticator.Provider>
   );
-
-  // Runs inside <Authenticator.Provider> (its context isn't visible to the
-  // component that renders the Provider itself) purely to detect the
-  // logged-out -> logged-in transition and fire onAuthenticated exactly once
-  // when it happens — covers both "logged into an existing account" and
-  // "just finished signing up".
-  function CartAuthSync({ onAuthenticated }) {
-    const { authStatus, user } = useAuthenticator((context) => [
-      context.authStatus,
-      context.user,
-    ]);
-    const previousStatus = useRef(authStatus);
-
-    useEffect(() => {
-      if (
-        previousStatus.current !== "authenticated" &&
-        authStatus === "authenticated"
-      ) {
-        onAuthenticated(user);
-      }
-      previousStatus.current = authStatus;
-    }, [authStatus, user, onAuthenticated]);
-
-    return null;
-  }
 }
