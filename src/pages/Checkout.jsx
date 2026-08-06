@@ -8,7 +8,7 @@ import { getOrCreateGuestId } from "../utils/guestId";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
-export default function Checkout({ cartItems, setPage, setCurrentOrderId }) {
+export default function Checkout({ cartItems, setPage, setCurrentOrderId, clearCart }) {
   const { user } = useAuthenticator((context) => [context.user]);
   const loginEmail = user?.signInDetails?.loginId || "";
 
