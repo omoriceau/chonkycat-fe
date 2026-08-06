@@ -2,6 +2,24 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+## Amplify Environment Variables
+
+This app deploys via Amplify Hosting (`amplify.yml`), which watches the
+connected GitHub branch directly — there's no separate GitHub Actions
+deploy workflow. Set these in Amplify Console under **Hosting >
+Environment variables**:
+
+| Variable                | Used by                                             | Notes                                                                                                                     |
+| ------------------------ | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `STRIPE_PK`              | `amplify.yml` (frontend build)                      | Written into `.env` as `VITE_STRIPE_PUBLISHABLE_KEY` before `npm run build` (see `src/pages/Checkout.jsx`).               |
+| `VITE_API_BASE_URL`      | `src/config.js` (frontend build)                    | Read directly by Vite — no `amplify.yml` mapping needed. Falls back to `https://api.chonkycat.ca` if unset.               |
+| `VITE_IMAGES_BASE_URL`   | `src/config.js` (frontend build)                    | Read directly by Vite. Falls back to `https://img.chonkycat.ca` if unset.                                                  |
+| `ENV`                    | `amplify/backend.ts` (backend build / CDK synth)    | Selects the DynamoDB users table (`chonky-users-${ENV}`) the post-confirmation Lambda writes to. Defaults to `production`. |
+
+`ENV` only needs to be set on the *backend* build phase (it's read by
+`amplify/backend.ts` during `npx ampx pipeline-deploy`, not by Vite) — it
+isn't a `VITE_`-prefixed variable and never reaches the browser bundle.
+
 ## Available Scripts
 
 In the project directory, you can run:
