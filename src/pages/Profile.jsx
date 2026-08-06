@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthenticator } from '@aws-amplify/ui-react';
 import { userApi } from '../utils/userApi';
+import { ordersApi } from '../utils/ordersApi';
 
 const inputStyle = {
   width: '100%',
@@ -18,6 +19,24 @@ const labelStyle = { display: 'block', color: '#a1a1a6', fontSize: '0.85rem', ma
 const EMPTY_ADDRESS = { address1: '', city: '', province: '', postal_code: '', country: 'Canada' };
 const addressRowStyle = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' };
 
+// Short codes only — mirrors CANADIAN_PROVINCES in lambdas/users/models.py,
+// which rejects anything else.
+const PROVINCES = [
+  { code: 'AB', name: 'Alberta' },
+  { code: 'BC', name: 'British Columbia' },
+  { code: 'MB', name: 'Manitoba' },
+  { code: 'NB', name: 'New Brunswick' },
+  { code: 'NL', name: 'Newfoundland and Labrador' },
+  { code: 'NS', name: 'Nova Scotia' },
+  { code: 'NT', name: 'Northwest Territories' },
+  { code: 'NU', name: 'Nunavut' },
+  { code: 'ON', name: 'Ontario' },
+  { code: 'PE', name: 'Prince Edward Island' },
+  { code: 'QC', name: 'Quebec' },
+  { code: 'SK', name: 'Saskatchewan' },
+  { code: 'YT', name: 'Yukon' },
+];
+
 export default function Profile({ setPage }) {
   // Grab the current user details and the global signOut method from Amplify
   const { user, signOut } = useAuthenticator((context) => [context.user]);
@@ -32,6 +51,18 @@ export default function Profile({ setPage }) {
   const [email, setEmail] = useState(sessionEmail);
   const [form, setForm] = useState({ first_name: '', last_name: '', phone: '', address: null });
   const [removingAddress, setRemovingAddress] = useState(false);
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [ordersError, setOrdersError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    ordersApi.getMyOrders()
+      .then((data) => { if (!cancelled) setOrders(data || []); })
+      .catch((err) => { if (!cancelled) setOrdersError(err.message); })
+      .finally(() => { if (!cancelled) setOrdersLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -236,10 +267,23 @@ export default function Profile({ setPage }) {
                     />
                     <div style={addressRowStyle}>
                       <input type="text" placeholder="City" value={form.address.city} onChange={updateAddressField('city')} style={inputStyle} />
-                      <input type="text" placeholder="Province" value={form.address.province} onChange={updateAddressField('province')} style={inputStyle} />
+                      <select value={form.address.province} onChange={updateAddressField('province')} style={inputStyle}>
+                        <option value="">Province</option>
+                        {PROVINCES.map((p) => (
+                          <option key={p.code} value={p.code}>{p.name}</option>
+                        ))}
+                      </select>
                     </div>
                     <div style={addressRowStyle}>
-                      <input type="text" placeholder="Postal code" value={form.address.postal_code} onChange={updateAddressField('postal_code')} style={inputStyle} />
+                      <input
+                        type="text"
+                        placeholder="A1A 1A1"
+                        value={form.address.postal_code}
+                        onChange={updateAddressField('postal_code')}
+                        pattern="[A-Za-z]\d[A-Za-z]\s?\d[A-Za-z]\d"
+                        title="Canadian postal code, e.g. A1A 1A1"
+                        style={inputStyle}
+                      />
                       <input type="text" placeholder="Country" value={form.address.country} onChange={updateAddressField('country')} style={inputStyle} />
                     </div>
                   </div>
@@ -272,6 +316,49 @@ export default function Profile({ setPage }) {
                 {saving ? 'Saving…' : 'Save Changes'}
               </button>
             </form>
+          )}
+        </div>
+
+        <div style={{ textAlign: 'left', marginBottom: '30px' }}>
+          <h4 style={{ color: '#FFF', fontSize: '1.1rem', marginBottom: '15px' }}>Order History</h4>
+
+          {ordersLoading && <p style={{ color: '#a1a1a6', fontSize: '0.9rem' }}>Loading your orders…</p>}
+
+          {ordersError && (
+            <p style={{ color: '#f8b4b4', fontSize: '0.85rem' }}>Couldn't load your orders: {ordersError}</p>
+          )}
+
+          {!ordersLoading && !ordersError && orders.length === 0 && (
+            <p style={{ color: '#a1a1a6', fontSize: '0.9rem' }}>No orders yet — go treat your chonky cat!</p>
+          )}
+
+          {!ordersLoading && !ordersError && orders.length > 0 && (
+            <div style={{ display: 'grid', gap: '12px' }}>
+              {orders.map((order) => (
+                <div
+                  key={order.order_id}
+                  style={{ border: '1px solid #2e2a24', borderRadius: '8px', padding: '14px' }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <span style={{ color: '#e4e4e7', fontSize: '0.85rem' }}>
+                      Order #{order.order_id.slice(0, 8)}
+                    </span>
+                    <span style={{ color: '#e0a93c', fontWeight: '600', fontSize: '0.85rem', textTransform: 'capitalize' }}>
+                      {order.status}
+                    </span>
+                  </div>
+                  <div style={{ color: '#a1a1a6', fontSize: '0.8rem', marginBottom: '8px' }}>
+                    {order.created_at ? new Date(order.created_at).toLocaleDateString() : ''}
+                  </div>
+                  <div style={{ color: '#a1a1a6', fontSize: '0.85rem' }}>
+                    {order.items.map((item) => `${item.name_snapshot} x${item.quantity}`).join(', ')}
+                  </div>
+                  <div style={{ textAlign: 'right', color: '#FFF', fontWeight: '600', marginTop: '8px' }}>
+                    ${order.total}
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
 

@@ -7,7 +7,9 @@ export default function About() {
       <section className="about-section">
         <div className="container">
           <div className="about-grid">
-            <div className="about-img">🎩</div>
+            <div className="about-img">
+              <img src="/sir-chonk.png" alt="Sir Chonksworth III" />
+            </div>
             <div>
               <div className="about-eyebrow">Our Story</div>
               <h2 className="about-title">Founded by<br /><em>Sir Chonksworth III</em></h2>
