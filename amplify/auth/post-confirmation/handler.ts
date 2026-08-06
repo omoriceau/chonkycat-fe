@@ -11,11 +11,10 @@
 import type { PostConfirmationTriggerHandler } from 'aws-lambda';
 import { DynamoDBClient, TransactWriteItemsCommand } from '@aws-sdk/client-dynamodb';
 
-// Must match backend.ts's USERS_TABLE_NAME (and that file's own comment
-// about keeping it in sync with chonky-cat-be's samconfig.toml override) —
-// this Lambda isn't given the name via an environment variable, so it's
-// duplicated here rather than imported.
-const USERS_TABLE_NAME = 'chonky-users-dev';
+// Set on this Lambda by backend.ts (derived from ENV, which defaults to
+// 'production' and can be overridden via Amplify Console env vars) — no
+// longer duplicated as a separate hardcoded string here.
+const USERS_TABLE_NAME = process.env.USERS_TABLE_NAME!;
 const EMAIL_LOCK_PREFIX = 'EMAIL#';
 
 const client = new DynamoDBClient();
