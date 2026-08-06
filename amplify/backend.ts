@@ -2,6 +2,7 @@
 import { defineBackend } from '@aws-amplify/backend';
 import { Stack } from 'aws-cdk-lib';
 import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import { Function as LambdaFunction } from 'aws-cdk-lib/aws-lambda';
 import { auth } from './auth/resource';
 import { storage } from './storage/resource';
 import { postConfirmation } from './auth/post-confirmation/resource';
@@ -42,4 +43,4 @@ postConfirmationLambda.addToRolePolicy(
 // CDK synth, so it can't read process.env.ENV above — pass the resolved
 // table name through as a real Lambda environment variable instead of
 // duplicating the ENV lookup/hardcoded string in a second place.
-postConfirmationLambda.addEnvironment('USERS_TABLE_NAME', USERS_TABLE_NAME);
+(postConfirmationLambda as LambdaFunction).addEnvironment('USERS_TABLE_NAME', USERS_TABLE_NAME);
