@@ -99,8 +99,19 @@ export default function Checkout({ cartItems, setPage, setCurrentOrderId, clearC
     );
   };
 
+  // Mirrors orders/service.py's FREE_SHIP_ABOVE / FLAT_SHIP_FEE / TAX_RATE
+  // (same reasoning as Cart.jsx's identical constants) — this is what gets
+  // sent as subtotal/total_amount below, but the backend recomputes the
+  // real charge server-side and ignores both fields entirely, so this is
+  // informational only, not what the shopper is actually billed.
+  const FREE_SHIPPING_THRESHOLD = 75;
+  const FLAT_SHIPPING_FEE = 10;
+  const TAX_RATE = 0.13;
+
   const calculateTotal = () => {
-    return calculateSubtotal() * 1.08; // Subtotal + 8% Tax
+    const subtotal = calculateSubtotal();
+    const shippingFee = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : FLAT_SHIPPING_FEE;
+    return subtotal + subtotal * TAX_RATE + shippingFee;
   };
 
   const handleInputChange = (e) => {

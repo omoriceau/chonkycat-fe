@@ -24,6 +24,18 @@ export default function Cart({
     0,
   );
 
+  // Mirrors orders/service.py's FREE_SHIP_ABOVE / FLAT_SHIP_FEE / TAX_RATE
+  // exactly — this is a display-only estimate (the backend recomputes the
+  // real charge server-side from its own item lookups and never trusts a
+  // client-submitted total), but it still has to match or the shopper sees
+  // a different number here than what they're actually charged.
+  const FREE_SHIPPING_THRESHOLD = 75;
+  const FLAT_SHIPPING_FEE = 10;
+  const TAX_RATE = 0.13;
+  const shippingFee = total >= FREE_SHIPPING_THRESHOLD ? 0 : FLAT_SHIPPING_FEE;
+  const tax = total * TAX_RATE;
+  const orderTotal = total + tax + shippingFee;
+
   const handleCheckout = async () => {
     if (cart.length === 0 || checkingInventory) {
       return;
@@ -315,15 +327,19 @@ export default function Cart({
                 </div>
                 <div className="summary-row">
                   <span>Shipping</span>
-                  <span className="shipping-free">FREE</span>
+                  {shippingFee === 0 ? (
+                    <span className="shipping-free">FREE</span>
+                  ) : (
+                    <span>${shippingFee.toFixed(2)}</span>
+                  )}
                 </div>
                 <div className="summary-row summary-tax">
-                  <span>Tax (8%)</span>
-                  <span>${(total * 0.08).toFixed(2)}</span>
+                  <span>Tax (13%)</span>
+                  <span>${tax.toFixed(2)}</span>
                 </div>
                 <div className="summary-total">
                   <span>Total</span>
-                  <span>${(total * 1.08).toFixed(2)}</span>
+                  <span>${orderTotal.toFixed(2)}</span>
                 </div>
 
                 <button
