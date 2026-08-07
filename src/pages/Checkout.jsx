@@ -5,6 +5,18 @@ import CheckoutForm from "../components/CheckoutForm";
 import { API_BASE_URL } from "../config";
 import { useAuthenticator } from "@aws-amplify/ui-react";
 import { getOrCreateGuestId } from "../utils/guestId";
+import { userApi } from "../utils/userApi";
+
+// The order's shipping address is a single "Full Name" field, but the
+// saved profile splits first/last (see Profile.jsx, lambdas/users/models.py)
+// — best-effort split/join at the boundary rather than changing either
+// model to match the other.
+function splitName(fullName) {
+  const trimmed = fullName.trim();
+  const spaceIndex = trimmed.indexOf(" ");
+  if (spaceIndex === -1) return { first_name: trimmed, last_name: "" };
+  return { first_name: trimmed.slice(0, spaceIndex), last_name: trimmed.slice(spaceIndex + 1) };
+}
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
@@ -41,6 +53,37 @@ export default function Checkout({ cartItems, setPage, setCurrentOrderId, clearC
     }
   }, [loginEmail]);
 
+  // Pre-fill shipping from the signed-in shopper's saved profile (name +
+  // address set on the Profile page). Guests have no profile to pull from.
+  // Guarded so it never overwrites anything already typed into the form —
+  // this only ever fills in a still-blank field.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+
+    userApi.getProfile()
+      .then((profile) => {
+        if (cancelled || !profile) return;
+        const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(" ");
+
+        setShippingData((prev) => ({
+          ...prev,
+          name: prev.name || fullName,
+          address1: prev.address1 || profile.address?.address1 || "",
+          city: profile.address?.city || prev.city,
+          province: profile.address?.province || prev.province,
+          postal_code: prev.postal_code || profile.address?.postal_code || "",
+          country: profile.address?.country || prev.country,
+        }));
+      })
+      .catch(() => {
+        // No saved profile yet (new account) or the fetch failed — not
+        // fatal, the shopper just fills the form in manually as before.
+      });
+
+    return () => { cancelled = true; };
+  }, [user]);
+
   // Protect the route: Bounce back if cart is empty
   useEffect(() => {
     if (!cartItems || cartItems.length === 0) {
@@ -65,6 +108,31 @@ export default function Checkout({ cartItems, setPage, setCurrentOrderId, clearC
     setShippingData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Best-effort save of the entered name/address back onto the shopper's
+  // profile, so it's there next time (Profile page, next checkout's
+  // pre-fill above). Guests have no profile to save to. Failures here are
+  // logged but never surfaced — this must not block a checkout that
+  // otherwise succeeded.
+  const persistProfileFromShipping = async () => {
+    if (!user) return;
+    const { first_name, last_name } = splitName(shippingData.name);
+    try {
+      await userApi.updateProfile({
+        first_name,
+        last_name,
+        address: {
+          address1: shippingData.address1,
+          city: shippingData.city,
+          province: shippingData.province,
+          postal_code: shippingData.postal_code,
+          country: shippingData.country,
+        },
+      });
+    } catch (err) {
+      console.error("Failed to save profile from checkout:", err);
+    }
+  };
+
   // Orchestrates Form Submission
   const handleSubmitShipping = async (e) => {
     e.preventDefault();
@@ -79,6 +147,9 @@ export default function Checkout({ cartItems, setPage, setCurrentOrderId, clearC
       if (orderId) {
         setLocalOrderId(orderId);
         if (setCurrentOrderId) setCurrentOrderId(orderId);
+
+        // Fire-and-forget — don't hold up the payment step on this.
+        persistProfileFromShipping();
 
         // 2. Request a client_secret from Stripe for this order
         await fetchPaymentIntent(orderId);

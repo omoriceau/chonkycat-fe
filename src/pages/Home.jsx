@@ -13,27 +13,28 @@ export default function Home({
     return [...products].sort(() => 0.5 - Math.random()).slice(0, 4);
   }, [products]);
 
-  // Dynamically calculate inventory counts from live data
+  // Dynamically calculate inventory counts from live data. `value` is the
+  // exact product.category string stored in the DB (see chonky-products
+  // table); `name` is just the display label — kept separate since the DB
+  // uses the singular "Treat", not "Snacks"/"Treats".
   const categories = [
     {
       name: "Dry Food",
+      value: "Dry Food",
       icon: "🥣",
       count: products.filter((p) => p.category === "Dry Food").length,
     },
     {
       name: "Wet Food",
+      value: "Wet Food",
       icon: "🫙",
       count: products.filter((p) => p.category === "Wet Food").length,
     },
     {
-      name: "Snacks",
+      name: "Treats",
+      value: "Treat",
       icon: "🐡",
-      count: products.filter((p) => p.category === "Snacks").length,
-    },
-    {
-      name: "Bundle",
-      icon: "📦",
-      count: products.filter((p) => p.category === "Bundle").length,
+      count: products.filter((p) => p.category === "Treat").length,
     },
   ];
 
@@ -184,7 +185,7 @@ export default function Home({
                 key={i}
                 className="cat-card"
                 onClick={() => {
-                  setSelectedCategory(cat.name);
+                  setSelectedCategory(cat.value);
                   setPage("products");
                 }}
               >
