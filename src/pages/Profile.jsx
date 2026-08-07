@@ -54,6 +54,18 @@ export default function Profile({ setPage }) {
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [ordersError, setOrdersError] = useState(null);
+  const [expandedOrderIds, setExpandedOrderIds] = useState(new Set());
+
+  const toggleOrderExpanded = (orderId) =>
+    setExpandedOrderIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(orderId)) {
+        next.delete(orderId);
+      } else {
+        next.add(orderId);
+      }
+      return next;
+    });
 
   useEffect(() => {
     let cancelled = false;
@@ -334,30 +346,125 @@ export default function Profile({ setPage }) {
 
           {!ordersLoading && !ordersError && orders.length > 0 && (
             <div style={{ display: 'grid', gap: '12px' }}>
-              {orders.map((order) => (
-                <div
-                  key={order.order_id}
-                  style={{ border: '1px solid #2e2a24', borderRadius: '8px', padding: '14px' }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <span style={{ color: '#e4e4e7', fontSize: '0.85rem' }}>
-                      Order #{order.order_id.slice(0, 8)}
-                    </span>
-                    <span style={{ color: '#e0a93c', fontWeight: '600', fontSize: '0.85rem', textTransform: 'capitalize' }}>
-                      {order.status}
-                    </span>
+              {orders.map((order) => {
+                const isExpanded = expandedOrderIds.has(order.order_id);
+                const addr = order.shipping_address;
+
+                return (
+                  <div
+                    key={order.order_id}
+                    style={{ border: '1px solid #2e2a24', borderRadius: '8px', overflow: 'hidden' }}
+                  >
+                    <div
+                      onClick={() => toggleOrderExpanded(order.order_id)}
+                      role="button"
+                      tabIndex={0}
+                      aria-expanded={isExpanded}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          toggleOrderExpanded(order.order_id);
+                        }
+                      }}
+                      style={{ padding: '14px', cursor: 'pointer' }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                        <span style={{ color: '#e4e4e7', fontSize: '0.85rem' }}>
+                          Order #{order.order_id.slice(0, 8)}
+                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ color: '#e0a93c', fontWeight: '600', fontSize: '0.85rem', textTransform: 'capitalize' }}>
+                            {order.status}
+                          </span>
+                          <span
+                            style={{
+                              color: '#a1a1a6',
+                              fontSize: '0.75rem',
+                              transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                              transition: 'transform 0.15s ease',
+                              display: 'inline-block',
+                            }}
+                          >
+                            ▼
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{ color: '#a1a1a6', fontSize: '0.8rem', marginBottom: '8px' }}>
+                        {order.created_at ? new Date(order.created_at).toLocaleDateString() : ''}
+                      </div>
+                      <div style={{ color: '#a1a1a6', fontSize: '0.85rem' }}>
+                        {order.items.map((item) => `${item.name_snapshot} x${item.quantity}`).join(', ')}
+                      </div>
+                      <div style={{ textAlign: 'right', color: '#FFF', fontWeight: '600', marginTop: '8px' }}>
+                        ${order.total}
+                      </div>
+                    </div>
+
+                    {isExpanded && (
+                      <div style={{ borderTop: '1px solid #2e2a24', padding: '14px', background: '#161310' }}>
+                        <div style={{ marginBottom: '14px' }}>
+                          <div style={{ color: '#a1a1a6', fontSize: '0.75rem', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            Items
+                          </div>
+                          <div style={{ display: 'grid', gap: '6px' }}>
+                            {order.items.map((item) => (
+                              <div
+                                key={item.product_id}
+                                style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#e4e4e7' }}
+                              >
+                                <span>{item.name_snapshot} × {item.quantity}</span>
+                                <span style={{ color: '#a1a1a6' }}>${item.unit_price} each — ${item.line_total}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {addr && (
+                          <div style={{ marginBottom: '14px' }}>
+                            <div style={{ color: '#a1a1a6', fontSize: '0.75rem', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                              Shipping Address
+                            </div>
+                            <div style={{ fontSize: '0.85rem', color: '#e4e4e7', lineHeight: '1.5' }}>
+                              {addr.name}<br />
+                              {addr.address1}{addr.address2 ? `, ${addr.address2}` : ''}<br />
+                              {addr.city}, {addr.province} {addr.postal_code}<br />
+                              {addr.country}
+                            </div>
+                          </div>
+                        )}
+
+                        {order.customer_notes && (
+                          <div style={{ marginBottom: '14px' }}>
+                            <div style={{ color: '#a1a1a6', fontSize: '0.75rem', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                              Delivery Notes
+                            </div>
+                            <div style={{ fontSize: '0.85rem', color: '#e4e4e7' }}>{order.customer_notes}</div>
+                          </div>
+                        )}
+
+                        <div style={{ borderTop: '1px solid #2e2a24', paddingTop: '10px', display: 'grid', gap: '4px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#a1a1a6' }}>
+                            <span>Subtotal</span>
+                            <span>${order.subtotal}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#a1a1a6' }}>
+                            <span>Tax</span>
+                            <span>${order.tax}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#a1a1a6' }}>
+                            <span>Shipping</span>
+                            <span>{order.shipping_fee === '0' || order.shipping_fee === '0.00' ? 'FREE' : `$${order.shipping_fee}`}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#FFF', fontWeight: '600', marginTop: '4px' }}>
+                            <span>Total</span>
+                            <span>${order.total}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div style={{ color: '#a1a1a6', fontSize: '0.8rem', marginBottom: '8px' }}>
-                    {order.created_at ? new Date(order.created_at).toLocaleDateString() : ''}
-                  </div>
-                  <div style={{ color: '#a1a1a6', fontSize: '0.85rem' }}>
-                    {order.items.map((item) => `${item.name_snapshot} x${item.quantity}`).join(', ')}
-                  </div>
-                  <div style={{ textAlign: 'right', color: '#FFF', fontWeight: '600', marginTop: '8px' }}>
-                    ${order.total}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

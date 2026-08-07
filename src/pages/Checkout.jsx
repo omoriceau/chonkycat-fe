@@ -44,6 +44,7 @@ export default function Checkout({ cartItems, setPage, setCurrentOrderId, clearC
   });
   const [customerNotes, setCustomerNotes] = useState("");
   const [email, setEmail] = useState(loginEmail);
+  const [profileLoading, setProfileLoading] = useState(false);
 
   // Keep the email field in sync once the signed-in user's session resolves
   // (it isn't available yet on first render).
@@ -60,6 +61,7 @@ export default function Checkout({ cartItems, setPage, setCurrentOrderId, clearC
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
+    setProfileLoading(true);
 
     userApi.getProfile()
       .then((profile) => {
@@ -79,6 +81,9 @@ export default function Checkout({ cartItems, setPage, setCurrentOrderId, clearC
       .catch(() => {
         // No saved profile yet (new account) or the fetch failed — not
         // fatal, the shopper just fills the form in manually as before.
+      })
+      .finally(() => {
+        if (!cancelled) setProfileLoading(false);
       });
 
     return () => { cancelled = true; };
@@ -275,8 +280,23 @@ export default function Checkout({ cartItems, setPage, setCurrentOrderId, clearC
               opacity: checkoutPhase === "payment" ? 0.6 : 1,
             }}
           >
-            <h2 style={{ fontSize: "1.5rem", marginBottom: "20px" }}>
+            <h2 style={{ fontSize: "1.5rem", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
               Shipping Details
+              {profileLoading && (
+                <span
+                  role="status"
+                  aria-label="Loading your saved info"
+                  style={{
+                    display: "inline-block",
+                    width: "16px",
+                    height: "16px",
+                    border: "2px solid #ddd",
+                    borderTopColor: "#333",
+                    borderRadius: "50%",
+                    animation: "checkout-spin 0.7s linear infinite",
+                  }}
+                />
+              )}
             </h2>
 
             <form onSubmit={handleSubmitShipping}>
