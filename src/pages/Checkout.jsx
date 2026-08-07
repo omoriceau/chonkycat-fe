@@ -190,7 +190,8 @@ export default function Checkout({ cartItems, setPage, setCurrentOrderId, clearC
         unit_price: item.price,
         name_snapshot: item.name,
       })),
-      shipping: { ...shippingData, notes: customerNotes },
+      shipping: shippingData,
+      customer_notes: customerNotes || null,
       subtotal: calculateSubtotal(),
       total_amount: calculateTotal(),
     };
