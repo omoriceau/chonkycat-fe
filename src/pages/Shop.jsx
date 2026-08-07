@@ -2,11 +2,13 @@ import ProductCard from '../components/ProductCard';
 
 // src/pages/Shop.jsx
 export default function Shop({ products, selectedCategory, setSelectedCategory, goToProduct, addToCart }) {
+  // `value` is the exact product.category string stored in the DB; `name`
+  // is just the display label — kept separate since the DB uses the
+  // singular "Treat", not "Snacks"/"Treats".
   const categories = [
-    { name: 'Dry Food', icon: '🥣' },
-    { name: 'Wet Food', icon: '🫙' },
-    { name: 'Snacks', icon: '🐡' },
-    { name: 'Bundle', icon: '📦' }
+    { name: 'Dry Food', value: 'Dry Food', icon: '🥣' },
+    { name: 'Wet Food', value: 'Wet Food', icon: '🫙' },
+    { name: 'Treats', value: 'Treat', icon: '🐡' },
   ];
 
   return (
@@ -37,15 +39,15 @@ export default function Shop({ products, selectedCategory, setSelectedCategory, 
           {categories.map((cat) => (
             <button
               key={cat.name}
-              onClick={() => setSelectedCategory(cat.name)}
+              onClick={() => setSelectedCategory(cat.value)}
               style={{
                 padding: '8px 16px',
                 cursor: 'pointer',
-                background: selectedCategory === cat.name ? '#333' : '#f0f0f0',
-                color: selectedCategory === cat.name ? '#fff' : '#000',
+                background: selectedCategory === cat.value ? '#333' : '#f0f0f0',
+                color: selectedCategory === cat.value ? '#fff' : '#000',
                 border: '1px solid #ccc',
                 borderRadius: '4px',
-                fontWeight: selectedCategory === cat.name ? 'bold' : 'normal'
+                fontWeight: selectedCategory === cat.value ? 'bold' : 'normal'
               }}
             >
               {cat.icon} {cat.name}
