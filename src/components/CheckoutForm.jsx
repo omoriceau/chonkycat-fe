@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
-export default function CheckoutForm({ setPage }) {
+export default function CheckoutForm({ setPage, clearCart }) {
   const stripe = useStripe();
   const elements = useElements();
 
@@ -39,8 +39,9 @@ const handleSubmit = async (e) => {
     } else if (paymentIntent && paymentIntent.status === "succeeded") {
       // 3. SUCCESS STATE: The card went through instantly!
       // You can trigger your state change here to show a confirmation screen or route them back to the shop
+      if (clearCart) clearCart();
       setPage('success');
-    } 
+    }
 
     setIsLoading(false);
   };
