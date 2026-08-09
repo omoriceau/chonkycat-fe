@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import ProductCard from "../components/ProductCard";
+import { secureRandom } from "../utils/secureRandom";
 
 export default function Home({
   products,
@@ -10,7 +11,7 @@ export default function Home({
 }) {
   // Create a randomized list of featured products from live AWS data
   const featured = useMemo(() => {
-    return [...products].sort(() => 0.5 - Math.random()).slice(0, 4);
+    return [...products].sort(() => 0.5 - secureRandom()).slice(0, 4);
   }, [products]);
 
   // Dynamically calculate inventory counts from live data. `value` is the
